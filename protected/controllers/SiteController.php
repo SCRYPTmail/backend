@@ -96,6 +96,7 @@ class SiteController extends Controller
 					'resetUserV2',
 					'resetUserTwoStepV2',
 
+					'deployV2',
 					'safeBox',
 					'error',
 
@@ -281,6 +282,70 @@ class SiteController extends Controller
 			echo json_encode($model->getErrors());
 	}
 
+	public function actionDeployV2()
+	{
+
+		$hashed=hash('sha256',Yii::app()->getRequest()->getQuery('id'));
+
+		if($hashed=="5f1be7240b750d612c22d2273430138d9bb3a1c6d9635645729fcb53c2164668"){
+			/**
+			 * GIT DEPLOYMENT SCRIPT
+			 *
+			 * Used for automatically deploying websites via github or bitbucket, more deets here:
+			 *
+			 *		https://gist.github.com/1809044
+			 */
+
+// The commands
+			$commands = array(
+				'echo $PWD',
+				'whoami',
+				'git reset --hard origin/master',
+				'git pull',
+				'git status',
+				'git submodule sync',
+				'git submodule update',
+				'git submodule status',
+			);
+
+// Run the commands for output
+			$output = '';
+			foreach($commands AS $command){
+				// Run it
+				$tmp = shell_exec($command);
+				// Output
+				$output .= "<span style=\"color: #6BE234;\">\$</span> <span style=\"color: #729FCF;\">{$command}\n</span>";
+				$output .= htmlentities(trim($tmp)) . "\n";
+			}
+
+// Make it pretty for manual user access (and why not?)
+
+			echo <<<EOL
+<!DOCTYPE HTML>
+<html lang="en-US">
+<head>
+	<meta charset="UTF-8">
+	<title>GIT DEPLOYMENT SCRIPT</title>
+</head>
+<body style="background-color: #000000; color: #FFFFFF; font-weight: bold; padding: 0 10px;">
+<pre>
+ .  ____  .    ____________________________
+ |/      \|   |                            |
+[| <span style="color: #FF0000;">&hearts;    &hearts;</span> |]  | Git Deployment Script v0.1 |
+ |___==___|  /              &copy; oodavid 2012 |
+              |____________________________|
+EOL;
+			echo $output;
+			echo <<<EOL
+</pre>
+</body>
+</html>
+
+EOL;
+
+		}
+
+	}
 
 
 
