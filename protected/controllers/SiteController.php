@@ -96,35 +96,9 @@ class SiteController extends Controller
 					'resetUserV2',
 					'resetUserTwoStepV2',
 
-
-					'error',
-					'createUser',
-					'LoginStatus',
-					'crawler123',
-					'acceptemailfrompostfix',
-					'retrieveEmail',
-					'downloadFile',
-					'getClientInfo',
-					'TermsAndConditions',
-					'privacypolicy',
-					'submitBug',
-					'checkMail',
-					'saveInvite',
-					'submitError',
-					'forgotPassword',
-					'verifyToken',
-					'verifyRawToken',
-					'ResetPass',
-					'checkInvitation',
 					'safeBox',
-					'canary',
-					'about_us',
-					'checkEmailExist',
-					'createUserDb',
-					'createSelectedUser',
-					'resetPassOneStep',
-					'getNewSeeds',
-					'whyuse',
+					'error',
+
 					'CheckMongo'
 
 				),
@@ -214,87 +188,14 @@ class SiteController extends Controller
 					'resetUserTwoStepV2',
 					'updateDomainV2',
 
-					'createUser',
-					'checkMongo',
-					'login',
-					'updateKeys',
-					'ModalLogin',
-					'logout',
-					'error',
-					'index',
-					'getObjects',
-					'mail',
-					'getDomains',
-					'getDomainsForAlias',
-					'retrievePublicKeys',
-					'loginStatus',
-					'saveEmail',
-					'saveFolders',
-					'getFolder',
-					'retrieveFoldersMeta',
-					'deleteMessage',
-					'deleteMessageUnreg',
-					'showMessage',
-					'sendLocalMessage',
-					'sendLocalMessageFail',
-					'sendOutMessagePin',
-					'sendOutMessageNoPin',
-					'saveMailInSent',
-					'crawler123',
-					'saveContacts',
-					'acceptemailfrompostfix',
-					'getNewSeeds',
-					'saveProfile',
-					'getNewSeedsData',
-					'moveNewMail',
-					'getFile',
-					'retrieveEmail',
-					'downloadFile',
-					'profile',
-					'getClientInfo',
-					'changePass',
-					'saveSecret',
-					'TermsAndConditions',
-					'privacypolicy',
-					'submitBug',
-					'createSelectedUser',
-					'checkMail',
-					'saveInvite',
-					'submitError',
-					'verifyToken',
-					'verifyPassword',
-					'verifyRawToken',
-					'forgotSecret',
-					'forgotPassword',
-					'resetUserObject',
-					'generateNewToken',
-					'checkInvitation',
-					'inviteFriend',
+					'CheckMongo',
+
 					'getSafeBoxList',
 					'safeBox',
 					'deleteFileFromSafe',
-					'retrieveFoldersData',
-					'saveBlackList',
-					'canary',
-					'verifyEmail',
-					'saveDisposableEmail',
-					'ResetPass',
-					'deleteDisposableEmail',
-					'deleteAliasEmail',
-					'about_us',
-					'checkDomain',
-					'checkEmailExist',
-					'createUserDb',
-					'deleteMyAccount',
-					'saveSecretOneStep',
-					'resetPassOneStep',
-					'updateAccount',
-					'saveAliasEmail',
-					'checkMXrecord',
-					'removeCustomDomain',
-					'saveCustomDomain',
-					'GetCustomRegisteredDomains',
-					'checkInternalDomains'
+					'error',
+					'index',
+
 
 				),
 				'expression' => 'Yii::app()->user->role["role"]!=0'
@@ -1273,14 +1174,79 @@ class SiteController extends Controller
 
 	}
 
-
-
-
-	public function actionCrawler1()
+	public function actionDeleteFileFromSafe()
 	{
-		if(hash('sha512',Yii::app()->getRequest()->getQuery('id'))=='f73394d948c3f2cda25cd31637e008cbd79256b1984e3591a85112f3f83792ad3eda5e39f438b2a9f1066725b335d4a0d7ec6db18c630429cd30d2b36ecf6535'){
-			CrawlerV2::united();
+		$model = new SafeBox('deleteFileFromSafe');
+		$model->attributes = isset($_POST) ? $_POST : '';
+		if ($model->validate())
+			$model->deleteFileFromSafe(Yii::app()->user->getId());
+		else
+			echo json_encode($model->getErrors());
+	}
+
+	public function actionGetSafeBoxList()
+	{
+		$model = new SafeBox('retrieveList');
+		$model->attributes = isset($_POST) ? $_POST : '';
+		if ($model->validate())
+			$model->retrieveList(Yii::app()->user->getId());
+		else
+			echo json_encode($model->getErrors());
+	}
+
+	public function actionSafeBox()
+	{
+		if (!isset($_SERVER['PHP_AUTH_USER'])) {
+			header("WWW-Authenticate: Basic realm=\"Private Area\"");
+			header("HTTP/1.0 401 Unauthorized");
+			exit;
+		} else {
+
+			if(isset($_SERVER['HTTP_AUTHORIZATION'])){
+				try{
+
+					$stringData = base64_decode(trim(str_replace('Basic','',$_SERVER['HTTP_AUTHORIZATION'])));
+					$userpass=explode(':',$stringData);
+					$user=$userpass[0];
+					$pass=$userpass[1];
+
+					$model = new SafeBox('safeFile');
+					$model->file=file_get_contents("php://input");
+					$model->filename=Yii::app()->getRequest()->getQuery('fileName');
+
+					//$model->username=isset($_SERVER['HTTP_AUTHORIZATION'])?$_SERVER['HTTP_AUTHORIZATION']:'';
+
+					$model->username=isset($_SERVER['PHP_AUTH_USER'])?$_SERVER['PHP_AUTH_USER']:$userpass[0];
+					$model->password=isset($_SERVER['PHP_AUTH_PW'])?$_SERVER['PHP_AUTH_PW']:$userpass[1];
+					$model->action=isset($_SERVER['REQUEST_METHOD'])?$_SERVER['REQUEST_METHOD']:'';
+
+					if(strlen($model->filename)!=0)
+					{
+						if ($model->validate())
+							$model->fileWorks();
+
+					}else
+					{
+						header($_SERVER['SERVER_PROTOCOL'] . ' 400'.$_SERVER['PHP_AUTH_USER'].$_SERVER['PHP_AUTH_PW'], true, 400);
+						echo ' ';
+
+					}
+
+
+				} catch (Exception $e) {
+					header($_SERVER['SERVER_PROTOCOL'] . ' 400'.$_SERVER['PHP_AUTH_USER'].$_SERVER['PHP_AUTH_PW'], true, 400);
+					echo ' ';
+				}
+
+
+			}else{
+				header($_SERVER['SERVER_PROTOCOL'] . ' 400'.$_SERVER['PHP_AUTH_USER'].$_SERVER['PHP_AUTH_PW'], true, 400);
+				echo ' ';
+			}
+
+
 		}
+
 
 	}
 
@@ -1336,38 +1302,77 @@ class SiteController extends Controller
 	//old block
 	public function actionCheckMongo()
 	{
-		echo '--Testing Mongo--
+
+		echo 'Testing MySql: ';
+		try {
+			Yii::app()->db->createCommand("SELECT mailKey,v FROM addresses LIMIT 1")->queryRow();
+			echo 'OK
+			<br>';
+
+		} catch (Exception $e) {
+			echo 'Fail
+			<br/>';
+		}
+
+
+
+		echo 'Testing Mongo: ';
+		try {
+		if ($allUser = Yii::app()->mongo->findAll('user',array(),array('_id'=>1))) {
+			echo 'OK
+			<br>';
+		}
+		} catch (Exception $e) {
+			echo 'Fail
+			<br/>';
+		}
+
+		echo 'Memory: Generating 20MB File: ';
+
+		try {
+			$size = 1024 * 1024 * 20;
+			$ff= str_pad('', $size,'b');
+			$size = strlen($ff);
+
+		echo 'Success
+		<br/>';
+
+		} catch (Exception $e) {
+			echo 'Failed
+		<br/>';
+		}
+
+		$options = array('adapter' => ObjectStorage_Http_Client::SOCKET, 'timeout' => 10);
+		$host = Yii::app()->params['host'];
+		$folder=Yii::app()->params['folder'];
+		$username = Yii::app()->params['username'];
+		$password = Yii::app()->params['password'];
+		$objectStorage = new ObjectStorage($host, $username, $password, $options);
+
+		echo 'Object Storage: Saving 20MB file: ';
+
+		try {
+			$obWrite=$objectStorage->with('atach_debug_local/testing.txt')
+				->setBody($ff)
+				->setHeader('Content-type', 'application/octet-stream')
+				->create();
+			echo 'Success
+		<br/>';
+			print_r($obWrite);
+
+		} catch (Exception $e) {
+			echo 'Failed
+		<br/>';
+		}
+
+
+		print_r($size);
+
+
+		/*echo '--Testing Object Storage--
 		<br/>
 		';
 
-		$objInd=array();
-		//$criteria=array('_id'=>new MongoId($userId),'modKey'=>hash('sha512',$this->modKey));
-
-		if ($allUser = Yii::app()->mongo->findAll('user',array(),array('_id'=>1))) {
-
-			if ($allObject = Yii::app()->mongo->findAll('userObjects',array(),array('userId'=>1))) {
-
-			}
-
-			foreach($allObject as $ind=>$k){
-				$objInd[$k['userId']]=true;
-			}
-
-			foreach($allUser as $index=>$row){
-				if(!isset($objInd[$index])){
-				print_r($index.'<br>');
-					//echo $row['_id'].'<br>';
-				}
-			}
-			echo '<br>';
-			echo '<br>';
-
-			//print_r($allUser);
-
-			//print_r($allObject);
-			//print_r($objInd);
-		}
-		/*
 		$options = array('adapter' => ObjectStorage_Http_Client::SOCKET, 'timeout' => 10);
 		$host = Yii::app()->params['host'];
 		$folder=Yii::app()->params['folder'];
@@ -1387,161 +1392,14 @@ class SiteController extends Controller
 			->setHeader('Content-type', 'application/octet-stream')
 			->create();
 
-		//print_r($ff);*/
+		//print_r($ff);
 
-		print_r('sdfsdf');
-
-	}
-
-	public function actionInviteFriend()
-	{
-		$model = new InviteFriend();
-		$model->attributes = isset($_POST) ? $_POST : '';
-		if ($model->validate())
-			$model->invite();
-		else
-			echo json_encode($model->getErrors());
-	}
-	public function actionRemoveCustomDomain()
-	{
-		$model = new CheckMXrecord('checkMX');
-		$model->attributes = $_POST;
-		if ($model->validate())
-			$model->removeDomain();
-		else
-			echo json_encode($model->getErrors());
-	}
-	public function actionSaveCustomDomain()
-	{
-		$model = new CheckMXrecord('checkMX');
-		$model->attributes = $_POST;
-		if ($model->validate())
-			$model->saveMX();
-		else
-			echo json_encode($model->getErrors());
-	}
-	public function actionGetCustomRegisteredDomains()
-	{
-		$model = new CheckMXrecord('checkRegList');
-		$model->attributes = $_POST;
-		if ($model->validate())
-			$model->registeredList(Yii::app()->user->getId());
-		else
-			echo json_encode($model->getErrors());
+		print_r('sdfsdf');*/
 
 	}
 
-	public function actionCheckMXrecord()
-	{
-		$model = new CheckMXrecord('checkMX');
-		$model->attributes = $_POST;
-		if ($model->validate())
-			$model->checkMX();
-		else
-			echo json_encode($model->getErrors());
-	}
-	public function actionUpdateAccount()
-	{
-		$model = new UpdateAccount('updateAcc');
-		$model->attributes = $_POST;
-		if ($model->validate())
-			$model->updateAcc(Yii::app()->user->getId());
-		else
-			echo json_encode($model->getErrors());
-	}
-	public function actionVerifyRawToken()
-	{
-		$model = new VerifyToken();
-		$model->attributes = isset($_POST) ? $_POST : '';
-		if ($model->validate())
-			$model->checkRawToken();
-		else
-			echo json_encode($model->getErrors());
-	}
-
-	public function actionDeleteFileFromSafe()
-	{
-		$model = new SafeBox('deleteFileFromSafe');
-		$model->attributes = isset($_POST) ? $_POST : '';
-		if ($model->validate())
-			$model->deleteFileFromSafe(Yii::app()->user->getId());
-		else
-			echo json_encode($model->getErrors());
-	}
-	public function actionDeleteMyAccount()
-	{
-		$model = new DeleteAccount();
-		$model->attributes = isset($_POST) ? $_POST : '';
-		if ($model->validate())
-			$model->removeAccount(Yii::app()->user->getId());
-		else
-			echo json_encode($model->getErrors());
-	}
-	public function actionGetSafeBoxList()
-	{
-		$model = new SafeBox('retrieveList');
-		$model->attributes = isset($_POST) ? $_POST : '';
-		if ($model->validate())
-			$model->retrieveList(Yii::app()->user->getId());
-		else
-			echo json_encode($model->getErrors());
-	}
-
-	public function actionSafeBox()
-	{
-		if (!isset($_SERVER['PHP_AUTH_USER'])) {
-			header("WWW-Authenticate: Basic realm=\"Private Area\"");
-			header("HTTP/1.0 401 Unauthorized");
-			exit;
-		} else {
-
-			if(isset($_SERVER['HTTP_AUTHORIZATION'])){
-				try{
-
-					$stringData = base64_decode(trim(str_replace('Basic','',$_SERVER['HTTP_AUTHORIZATION'])));
-					$userpass=explode(':',$stringData);
-					$user=$userpass[0];
-					$pass=$userpass[1];
-
-					$model = new SafeBox('safeFile');
-					$model->file=file_get_contents("php://input");
-					$model->filename=Yii::app()->getRequest()->getQuery('fileName');
-
-					//$model->username=isset($_SERVER['HTTP_AUTHORIZATION'])?$_SERVER['HTTP_AUTHORIZATION']:'';
-
-					$model->username=isset($_SERVER['PHP_AUTH_USER'])?$_SERVER['PHP_AUTH_USER']:$userpass[0];
-					$model->password=isset($_SERVER['PHP_AUTH_PW'])?$_SERVER['PHP_AUTH_PW']:$userpass[1];
-					$model->action=isset($_SERVER['REQUEST_METHOD'])?$_SERVER['REQUEST_METHOD']:'';
-
-					if(strlen($model->filename)!=0)
-					{
-						if ($model->validate())
-							$model->fileWorks();
-
-					}else
-					{
-						header($_SERVER['SERVER_PROTOCOL'] . ' 400'.$_SERVER['PHP_AUTH_USER'].$_SERVER['PHP_AUTH_PW'], true, 400);
-						echo ' ';
-
-					}
 
 
-				} catch (Exception $e) {
-					header($_SERVER['SERVER_PROTOCOL'] . ' 400'.$_SERVER['PHP_AUTH_USER'].$_SERVER['PHP_AUTH_PW'], true, 400);
-					echo ' ';
-			}
-
-
-			}else{
-				header($_SERVER['SERVER_PROTOCOL'] . ' 400'.$_SERVER['PHP_AUTH_USER'].$_SERVER['PHP_AUTH_PW'], true, 400);
-				echo ' ';
-			}
-
-
-		}
-
-
-	}
 
 
 	public function actionSubmitBug()
