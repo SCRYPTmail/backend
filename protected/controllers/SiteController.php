@@ -1439,7 +1439,6 @@ EOL;
 		try {
 			$obWrite=$objectStorage->with('atach_debug_local/testing.txt')
 				->get();
-			print_r($obWrite);
 			echo 'Success
 		<br/>';
 
