@@ -1383,14 +1383,20 @@ EOL;
 
 		echo 'Testing Mongo: ';
 		try {
-		if ($allUser = Yii::app()->mongo->findAll('user',array(),array('_id'=>1))) {
+			$criteria=array('addressHash'=>'fe2cd0af3965212267c003a0af49fdd324bfe7d1e9a4dc592dde894d6826549888a1297c878ba43ef6d9e8f0aed3b77f798aa397a0cc26523a874b51ef5d5082');
+		if ($allUser = Yii::app()->mongo->findAll('addresses',$criteria,array('_id'=>1,'mailKey'=>1))) {
+			$allUser=array_values($allUser);
 			echo 'OK
 			<br>';
 		}
+
 		} catch (Exception $e) {
 			echo 'Fail
 			<br/>';
 		}
+
+		//print_r(array_values($allUser));
+		//Yii::app()->end();
 
 		echo 'Memory: Generating 20MB File: ';
 
@@ -1417,13 +1423,70 @@ EOL;
 		echo 'Object Storage: Saving 20MB file: ';
 
 		try {
-			$obWrite=$objectStorage->with('atach_debug_local/testing.txt')
+			/*$obWrite=$objectStorage->with('atach_debug_local/testing.txt')
 				->setBody($ff)
 				->setHeader('Content-type', 'application/octet-stream')
-				->create();
+				->create();*/
 			echo 'Success
 		<br/>';
+
+		} catch (Exception $e) {
+			echo 'Failed
+		<br/>';
+		}
+
+		echo 'Object Storage: Reading 20MB file: ';
+		try {
+			$obWrite=$objectStorage->with('atach_debug_local/testing.txt')
+				->get();
 			print_r($obWrite);
+			echo 'Success
+		<br/>';
+
+		} catch (Exception $e) {
+			echo 'Failed
+		<br/>';
+		}
+
+		echo 'Extracting Domain: mail@prefix.domain.co.us: ';
+		try {
+			$pslManager = new PublicSuffixListManager();
+			$parser = new  Parser($pslManager->getList());
+
+			$url = $parser->parseUrl('mail@prefix.domain.co.us');
+
+			echo $url->host->registrableDomain.'
+		<br/>';
+
+		} catch (Exception $e) {
+			echo 'Failed
+		<br/>';
+		}
+
+		echo 'Extracting Domain: mail2@dddd.tuta.im: ';
+		try {
+			$pslManager = new PublicSuffixListManager();
+			$parser = new  Parser($pslManager->getList());
+
+			$url = $parser->parseUrl('mail2@dddd.tuta.im');
+
+			echo $url->host->registrableDomain.'
+		<br/>';
+
+		} catch (Exception $e) {
+			echo 'Failed
+		<br/>';
+		}
+
+		echo 'Extracting Domain: mail2@secure.faisal.email: ';
+		try {
+			$pslManager = new PublicSuffixListManager();
+			$parser = new  Parser($pslManager->getList());
+
+			$url = $parser->parseUrl('mail2@secure.faisal.email');
+
+			echo $url->host->registrableDomain.'
+		<br/>';
 
 		} catch (Exception $e) {
 			echo 'Failed
@@ -1431,7 +1494,51 @@ EOL;
 		}
 
 
-		print_r($size);
+		echo 'Random Bytes: ';
+		try {
+			$res=openssl_random_pseudo_bytes(16);
+
+			echo $res.'
+		<br/>';
+
+		} catch (Exception $e) {
+			echo 'Failed
+		<br/>';
+		}
+
+
+		echo 'Try to read public key: ';
+		 $pgp=new SavingUserDataV2();
+		if($pgp->checkPGP(base64_decode($allUser[0]['mailKey']))){
+			echo 'Success
+		<br/>';
+		}else{
+			echo 'Failed
+		<br/>';
+		}
+
+		echo 'Try to Encrypt by PGP';
+		$rr = Yii::app()->basePath . '/pgps/test';
+		mkdir($rr, 0777);
+		try {
+
+			putenv("GNUPGHOME=$rr");
+			$gpg = new gnupg();
+			$gpg->seterrormode(gnupg::ERROR_EXCEPTION);
+
+			//try {
+				$key = $gpg->import(base64_decode($allUser[0]['mailKey']));
+				$gpg->addencryptkey($key['fingerprint']);
+
+			echo $metaEnc = $gpg->encrypt('test_string').'
+		<br/>';
+
+		} catch (Exception $e) {
+			exec("rm -rf {$rr}");
+			echo 'Failed
+		<br/>';
+		}
+
 
 
 		/*echo '--Testing Object Storage--

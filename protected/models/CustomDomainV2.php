@@ -162,7 +162,14 @@ class CustomDomainV2 extends CFormModel
 
 public function get_domain($domain) {
 
-		$original = $domain = strtolower($domain);
+	$pslManager = new PublicSuffixListManager();
+	$parser = new  Parser($pslManager->getList());
+
+	$url = $parser->parseUrl($domain);
+
+
+	print_r($url->host->registrableDomain);
+	/*	$original = $domain = strtolower($domain);
 
 		if (filter_var($domain, FILTER_VALIDATE_IP)) { return $domain; }
 		$arr = array_slice(array_filter(explode('.', $domain, 4), function($value){
@@ -214,7 +221,7 @@ public function get_domain($domain) {
 		}
 
 
-		return join('.', $arr);
+		return join('.', $arr);*/
 	}
 
 
