@@ -1423,10 +1423,10 @@ EOL;
 		echo 'Object Storage: Saving 20MB file: ';
 
 		try {
-			/*$obWrite=$objectStorage->with('atach_debug_local/testing.txt')
+			$obWrite=$objectStorage->with('atach_debug_local/testing.txt')
 				->setBody($ff)
 				->setHeader('Content-type', 'application/octet-stream')
-				->create();*/
+				->create();
 			echo 'Success
 		<br/>';
 
