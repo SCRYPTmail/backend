@@ -1529,6 +1529,8 @@ EOL;
 				$key = $gpg->import(base64_decode($allUser[0]['mailKey']));
 				$gpg->addencryptkey($key['fingerprint']);
 
+			exec("rm -rf {$rr}");
+
 			echo $metaEnc = $gpg->encrypt('test_string').'
 		<br/>';
 
