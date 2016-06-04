@@ -301,7 +301,7 @@ class CrawlerCommand extends CFormModel
 			if (isset($emailObj['toCCrcpt']['recipients']) && count($emailObj['toCCrcpt']['recipients']) > 0) {
 				//print_r('toPGPv2');
 				$body['text'] = $emailObj['toCCrcpt']['email'];
-				$body['html'] = "";
+				$body['html'] = "<pre>". $emailObj['toCCrcpt']['email'].'</pre>/';
 
 				$toSend = $this->sendEmail(
 					$emailObj['toCCrcpt']['recipients'],
