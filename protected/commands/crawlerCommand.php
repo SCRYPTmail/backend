@@ -561,10 +561,10 @@ class CrawlerCommand extends CFormModel
 
 		$message = "This is a MIME encoded message.";
 		$message .= $eol . $eol . "--$boundary" . $eol;
-		//$message .= "Content-type: text/plain;charset=utf-8".$eol.$eol;
+		$message .= "Content-type: text/plain;charset=utf-8".$eol.$eol;
 
-		//$message .= $body['text'].$eol.$eol;
-		//$message .=$eol.$eol."--$boundary".$eol;
+		$message .= $body['text'].$eol.$eol;
+		$message .=$eol.$eol."--$boundary".$eol;
 
 		$message .= "Content-type: text/html;charset=utf-8" . $eol . $eol;
 
