@@ -327,7 +327,7 @@ class CrawlerCommand extends CFormModel
 			if (isset($emailObj['bccRcpt']) && count($emailObj['bccRcpt']) > 0) {
 				foreach ($emailObj['bccRcpt'] as $email64 => $emailPGP64) {
 					$body['text'] = $emailPGP64;
-					$body['html'] = "";
+					$body['html'] = "<pre>".$emailPGP64.'</pre>/';
 
 					$toSendV1 = $this->sendEmail(
 						array($email64),
