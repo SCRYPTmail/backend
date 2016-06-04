@@ -168,7 +168,7 @@ public function get_domain($domain) {
 	$url = $parser->parseUrl($domain);
 
 
-	print_r($url->host->registrableDomain);
+	return $url->host->registrableDomain;
 	/*	$original = $domain = strtolower($domain);
 
 		if (filter_var($domain, FILTER_VALIDATE_IP)) { return $domain; }
