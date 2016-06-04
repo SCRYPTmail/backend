@@ -573,6 +573,10 @@ class CrawlerCommand extends CFormModel
 			$message .= "Content-type: text/html;charset=utf-8" . $eol . $eol;
 			$message .= $body['html'] . $eol . $eol;
 			$message .= $eol . $eol . "--$boundary--";
+		}else{
+			$message .= "Content-type: text/html;charset=utf-8" . $eol . $eol;
+			$message .= $body['text'] . $eol . $eol;
+			$message .= $eol . $eol . "--$boundary--";
 		}
 
 
