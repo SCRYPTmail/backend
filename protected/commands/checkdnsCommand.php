@@ -155,6 +155,7 @@ class CheckdnsCommand extends CFormModel
 
 						$rowDkim=implode($row->text,'');
 
+
 						$dkimTempRec="default._domainkey.".$record['domain'].' '.$dkimRecOrig;
 
 						if(
@@ -177,15 +178,22 @@ class CheckdnsCommand extends CFormModel
 						$resp = @$resolver->query("default._domainkey.".$record['domain'], 'TXT');
 						$dkimRec=$resp->answer;
 
-
-
 						foreach($dkimRec as $dkimRow){
 							if(
 								$dkimRow->type==="TXT" &&
-								$dkimRow->name==="default._domainkey.".$record['domain'] &&
-								$dkimRow->text[0]==$dkimRecOrig
+								$dkimRow->name==="default._domainkey.".$record['domain']
 							){
-								$data['dkimRecordValid']=true;
+								$dkre='';
+								foreach( $dkimRow->text as $dkRow){
+									$dkre.=$dkRow;
+								}
+
+								if($dkre===$dkimRecOrig){
+									$data['dkimRecordValid']=true;
+								}
+
+
+
 							}
 						}
 					}
