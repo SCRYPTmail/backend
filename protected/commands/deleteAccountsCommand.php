@@ -72,7 +72,7 @@ class DeleteAccountsCommand extends CFormModel
 					if($emails=Yii::app()->mongo->findAll('personalFolders',$mngDataAgregate,array('file'=>1,'v'=>1))){
 						foreach($emails as $emailId=>$emailData){
 
-							if((!isset($emailData['v']) || $emailData['v']!==2) && $emailData['file']!=='null' && isset($emailData['file'])){
+							if((!isset($emailData['v']) || $emailData['v']!==2) && isset($emailData['file']) && $emailData['file']!=='null'){
 								$filesV1[]=json_decode($emailData['file'],true);
 							}
 
