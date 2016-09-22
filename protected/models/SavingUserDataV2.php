@@ -89,7 +89,7 @@ class SavingUserDataV2 extends CFormModel
 
 			//folderSettings
 			array('folderData', 'match', 'pattern' => "/^[a-zA-Z0-9+{:}\",\/=;\d]+$/i", 'allowEmpty' => false, 'on' => 'folderSettings','message'=>'fld2upd'),
-			array('folderData','length', 'max'=>3000000,'min'=>20,'on'=>'folderSettings','message'=>'fld2upd'),
+			array('folderData','length', 'max'=>8000000,'min'=>20,'on'=>'folderSettings','message'=>'fld2upd'),
 
 
 			array('filterData', 'match', 'pattern' => "/^[a-zA-Z0-9+{:}\",\/=;\d]+$/i", 'allowEmpty' => true, 'on' => 'folderSettings','message'=>'fld2upd'),
@@ -116,7 +116,7 @@ class SavingUserDataV2 extends CFormModel
 
 			//saveDraftEmail
 			array('folderData,emailData', 'match', 'pattern' => "/^[a-zA-Z0-9+{:}\",\/=;\d]+$/i", 'allowEmpty' => true, 'on' => 'saveDraftEmail','message'=>'fld2upd'),
-			array('folderData,emailData','length', 'max'=>3000000,'allowEmpty' => true,'on'=>'saveDraftEmail','message'=>'fld2upd'),
+			array('folderData,emailData','length', 'max'=>8000000,'allowEmpty' => true,'on'=>'saveDraftEmail','message'=>'fld2upd'),
 
 
 
@@ -125,7 +125,7 @@ class SavingUserDataV2 extends CFormModel
 
 			//sendEmailClearText
 			array('folderData', 'match', 'pattern' => "/^[a-zA-Z0-9+{:}\",\/=;\d]+$/i", 'allowEmpty' => true, 'on' => 'sendEmailClearText','message'=>'fld2upd'),
-			array('folderData','length', 'max'=>3000000,'allowEmpty' => true,'on'=>'sendEmailClearText','message'=>'fld2upd'),
+			array('folderData','length', 'max'=>8000000,'allowEmpty' => true,'on'=>'sendEmailClearText','message'=>'fld2upd'),
 
 			array('emailData', 'match', 'pattern' => "/^[a-zA-Z0-9+{\[\]:}\",\/=;\d]+$/i", 'allowEmpty' => true, 'on' => 'sendEmailClearText','message'=>'fld2upd'),
 
@@ -140,7 +140,7 @@ class SavingUserDataV2 extends CFormModel
 
 
 			array('folderData', 'match', 'pattern' => "/^[a-zA-Z0-9+{:}\",\/=;\d]+$/i", 'allowEmpty' => true, 'on' => 'sendEmailWithPin','message'=>'fld2upd'),
-			array('folderData','length', 'max'=>3000000,'allowEmpty' => true,'on'=>'sendEmailWithPin','message'=>'fld2upd'),
+			array('folderData','length', 'max'=>8000000,'allowEmpty' => true,'on'=>'sendEmailWithPin','message'=>'fld2upd'),
 
 			array('emailData', 'match', 'pattern' => "/^[a-zA-Z0-9+{\[\]:}\",\/=;\d]+$/i", 'allowEmpty' => true, 'on' => 'sendEmailWithPin','message'=>'fld2upd'),
 			array('emailData','length', 'max'=>6000000,'allowEmpty' => false,'on'=>'sendEmailWithPin','message'=>'fld2upd'),
@@ -158,7 +158,7 @@ class SavingUserDataV2 extends CFormModel
 			//sendEmailPGP
 
 			array('folderData', 'match', 'pattern' => "/^[a-zA-Z0-9+{:}\",\/=;\d]+$/i", 'allowEmpty' => true, 'on' => 'sendEmailPGP','message'=>'fld2upd'),
-			array('folderData','length', 'max'=>3000000,'allowEmpty' => true,'on'=>'sendEmailPGP','message'=>'fld2upd'),
+			array('folderData','length', 'max'=>8000000,'allowEmpty' => true,'on'=>'sendEmailPGP','message'=>'fld2upd'),
 
 			array('emailData', 'match', 'pattern' => "/^[a-zA-Z0-9+{\[\]:}\",\/=;\d]+$/i", 'allowEmpty' => true, 'on' => 'sendEmailPGP','message'=>'fld2upd'),
 			array('emailData','length', 'max'=>600000,'allowEmpty' => false,'on'=>'sendEmailPGP','message'=>'fld2upd'),
@@ -176,7 +176,7 @@ class SavingUserDataV2 extends CFormModel
 			//sendEmailIntV2
 
 			array('folderData', 'match', 'pattern' => "/^[a-zA-Z0-9+{:}\",\/=;\d]+$/i", 'allowEmpty' => true, 'on' => 'sendEmailInt','message'=>'fld2upd'),
-			array('folderData','length', 'max'=>3000000,'allowEmpty' => true,'on'=>'sendEmailInt','message'=>'fld2upd'),
+			array('folderData','length', 'max'=>8000000,'allowEmpty' => true,'on'=>'sendEmailInt','message'=>'fld2upd'),
 
 			array('emailData', 'match', 'pattern' => "/^[a-zA-Z0-9+{\[\]:}\",\/=;\d]+$/i", 'allowEmpty' => true, 'on' => 'sendEmailInt','message'=>'fld2upd'),
 			array('emailData','length', 'max'=>600000,'allowEmpty' => false,'on'=>'sendEmailInt','message'=>'fld2upd'),
@@ -192,7 +192,7 @@ class SavingUserDataV2 extends CFormModel
 			array('seedEmails', 'checkSeedEmails', 'on' => 'saveNewEmailOld'),
 
 			array('folderData', 'match', 'pattern' => "/^[a-zA-Z0-9+{:}\",\/=;\d]+$/i", 'allowEmpty' => true, 'on' => 'saveNewEmailOld','message'=>'fld2upd'),
-			array('folderData','length', 'max'=>3000000,'allowEmpty' => true,'on'=>'saveNewEmailOld','message'=>'fld2upd'),
+			array('folderData','length', 'max'=>8000000,'allowEmpty' => true,'on'=>'saveNewEmailOld','message'=>'fld2upd'),
 
 			array('modKey', 'match', 'pattern' => "/^[a-z0-9\d]{32,64}$/i", 'allowEmpty' => false, 'on' => 'saveNewEmailOld','message'=>'fld2upd'),
 
@@ -203,14 +203,14 @@ class SavingUserDataV2 extends CFormModel
 			array('seedEmails', 'checkEmailsv2', 'on' => 'saveNewEmailV2'),
 
 			array('folderData', 'match', 'pattern' => "/^[a-zA-Z0-9+{:}\",\/=;\d]+$/i", 'allowEmpty' => true, 'on' => 'saveNewEmailV2','message'=>'fld2upd'),
-			array('folderData','length', 'max'=>3000000,'allowEmpty' => true,'on'=>'saveNewEmailV2','message'=>'fld2upd'),
+			array('folderData','length', 'max'=>8000000,'allowEmpty' => true,'on'=>'saveNewEmailV2','message'=>'fld2upd'),
 
 			array('modKey', 'match', 'pattern' => "/^[a-z0-9\d]{32,64}$/i", 'allowEmpty' => false, 'on' => 'saveNewEmailV2','message'=>'fld2upd'),
 
 
 			//deleteEmailV2
 			array('folderData', 'match', 'pattern' => "/^[a-zA-Z0-9+{:}\",\/=;\d]+$/i", 'allowEmpty' => true, 'on' => 'deleteEmailV2','message'=>'fld2upd'),
-			array('folderData','length', 'max'=>3000000,'allowEmpty' => true,'on'=>'deleteEmailV2','message'=>'fld2upd'),
+			array('folderData','length', 'max'=>8000000,'allowEmpty' => true,'on'=>'deleteEmailV2','message'=>'fld2upd'),
 
 			array('modKey', 'match', 'pattern' => "/^[a-z0-9\d]{32,64}$/i", 'allowEmpty' => false, 'on' => 'deleteEmailV2','message'=>'fld2upd'),
 
