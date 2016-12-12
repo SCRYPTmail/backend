@@ -68,6 +68,8 @@ class paymentApiV2 extends CFormModel
 
 		$prorateDays=floor($datediff/(60*60*24));
 
+		if($prorateDays>365) $prorateDays=$prorateDays-365;
+
 		if($prices=Yii::app()->db->createCommand("SELECT * FROM featurePrice")->queryAssoc('name')){
 			$result['response']="success";
 
