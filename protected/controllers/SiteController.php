@@ -723,13 +723,13 @@ EOL;
 
 	public function actionClaimFreeV2()
 	{
-		$model = new PlansWorkerV2('claimFree');
+		/*$model = new PlansWorkerV2('claimFree');
 
 		$model->attributes = $_POST;
 		if ($model->validate()) //validating json data according to action
 			$model->claimFree(Yii::app()->user->getId());
 		else
-			echo json_encode($model->getErrors());
+			echo json_encode($model->getErrors());*/
 
 	}
 
