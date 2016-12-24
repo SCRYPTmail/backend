@@ -565,7 +565,7 @@ class CrawlerCommand extends CFormModel
 
             $message .= $body['text'].$eol.$eol;
 
-            $message .=$eol.$eol."--$boundary".$eol;
+           // $message .=$eol.$eol."--$boundary".$eol;
         }
 
        /* if($body['text']!==""){
