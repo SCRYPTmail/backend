@@ -552,17 +552,27 @@ class CrawlerCommand extends CFormModel
 
         $headers .= "Content-Type: multipart/encrypted; boundary=$boundary" . $eol.'protocol="application/pgp-encrypted"' . $eol. $eol;
 
-        $message = "This is a MIME encoded message.";
-        $message .= $eol . $eol . "--$boundary" . $eol;
+
+        $message = $eol . $eol . "--$boundary" . $eol;
 
         if($body['text']!==""){
-            $message .= "Content-type: application/pgp-encrypted".$eol.$eol;
-            $message .= ' Version: 1'.$eol.$eol;
+            $message .= 'Content-type: application/pgp-encrypted;charset="UTF-8"'.$eol.$eol;
+
             $message .= $eol . $eol . "--$boundary" . $eol;
-            $message .= "Content-type: application/octet-stream".$eol.$eol;
+            $message .= 'Content-type: application/octet-stream; name="encrypted.asc"'.$eol.$eol;
+            $message .= 'Content-Disposition: inline; filename="encrypted.asc"'.$eol.$eol;
+
 
             $message .= $body['text'].$eol.$eol;
+
+            $message .=$eol.$eol."--$boundary".$eol;
         }
+
+       /* if($body['text']!==""){
+            $message .= "Content-type: text/plain;charset=utf-8".$eol.$eol;
+            $message .= $body['text'].$eol.$eol;
+            $message .=$eol.$eol."--$boundary".$eol;
+        }*/
 
             $message .= $eol . $eol . "--$boundary--";
 
