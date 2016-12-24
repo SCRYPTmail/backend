@@ -552,13 +552,20 @@ class CrawlerCommand extends CFormModel
 
         $headers .= "Content-Type: multipart/encrypted; boundary=$boundary" . $eol.'protocol="application/pgp-encrypted"' . $eol. $eol;
 
+        $message = 'This is an OpenPGP/MIME encrypted message (RFC 4880 and 3156)'. $eol;
+        $message .= "--$boundary" . $eol;
+        $message .= 'Content-Type: application/pgp-encrypted; charset="UTF-8"'. $eol. $eol;
 
-        $message = $eol . $eol . "--$boundary" . $eol;
+        $message .= 'Content-Description: PGP/MIME Versions Identification'. $eol. $eol;
+        $message .= 'Version: 1'. $eol. $eol;
+
+
+        $message .= $eol . $eol . "--$boundary" . $eol;
+
+
 
         if($body['text']!==""){
-            $message .= 'Content-type: application/pgp-encrypted;charset="UTF-8"'.$eol.$eol;
 
-            $message .= $eol . $eol . "--$boundary" . $eol;
             $message .= 'Content-type: application/octet-stream; name="encrypted.asc"'.$eol.$eol;
             $message .= 'Content-Disposition: inline; filename="encrypted.asc"'.$eol.$eol;
 
