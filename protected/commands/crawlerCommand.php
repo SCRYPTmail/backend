@@ -554,7 +554,8 @@ class CrawlerCommand extends CFormModel
 
         $message = 'This is an OpenPGP/MIME encrypted message (RFC 4880 and 3156)'. $eol;
         $message .= "--$boundary" . $eol;
-        $message .= 'Content-Type: application/pgp-encrypted; charset="UTF-8"'. $eol. $eol;
+        $message .= 'Content-Type: application/pgp-encrypted; charset="UTF-8"'. $eol;
+        $message .= 'Content-Transfer-Encoding: 7bit'. $eol. $eol;
 
         $message .= 'Content-Description: PGP/MIME Versions Identification'. $eol. $eol;
         $message .= 'Version: 1'. $eol. $eol;
@@ -563,10 +564,11 @@ class CrawlerCommand extends CFormModel
         $message .= $eol . $eol . "--$boundary" . $eol;
 
 
-
         if($body['text']!==""){
 
-            $message .= 'Content-type: application/octet-stream; name="encrypted.asc"'.$eol.$eol;
+            $message .= 'Content-type: application/octet-stream; name="encrypted.asc"'.$eol;
+            $message .= 'Content-Transfer-Encoding: 7bit'.$eol;
+            $message .= 'Content-ID: <0>'.$eol;
             $message .= 'Content-Disposition: inline; filename="encrypted.asc"'.$eol.$eol;
 
 
@@ -581,7 +583,7 @@ class CrawlerCommand extends CFormModel
             $message .=$eol.$eol."--$boundary".$eol;
         }*/
 
-            $message .= $eol . $eol . "--$boundary--";
+            $message .= "--$boundary--";
 
 
 /*        print_r($headers);
