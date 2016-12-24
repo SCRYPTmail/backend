@@ -550,18 +550,21 @@ class CrawlerCommand extends CFormModel
 
 
 
-    $headers .= "Content-Type: multipart/encrypted; boundary=$boundary" . $eol .' protocol="application/pgp-encrypted"';
+    $headers .= "Content-Type: multipart/encrypted; boundary=$boundary" . $eol .' protocol="application/pgp-encrypted"'. $eol . $eol;
 
         $message = $eol . $eol . "--$boundary" . $eol;
-         $message .= "Content-type: application/pgp-encrypted".$eol.$eol;
-        $message .= "Version: 1";
-         $message .= $eol . $eol . "--$boundary" . $eol;
+        $message .= "Content-type: application/pgp-encrypted".$eol;
+        $message .= "Version: 1".$eol.$eol;
 
         if($body['text']!==""){
-            $message .= "Content-type: application/octet-stream".$eol.$eol;
-            $message .= $body['text'];
             $message .=$eol.$eol."--$boundary".$eol;
+            $message .= "Content-type: application/octet-stream".$eol.$eol;
+
+
+            $message .= $body['text'].$eol.$eol;
+
         }
+           $message .= $eol . $eol . "--$boundary--";
 
 
 /*        print_r($headers);
