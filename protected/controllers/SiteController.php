@@ -183,11 +183,11 @@ class SiteController extends Controller
 					'checkLoginTokenV2',
 					'createNewUserV2',
 					'resetUserObjectV2',
-					'claimFreeV2',
-					'assignTypesV2',
+					//'claimFreeV2',
 					'updateSecretTokenV2',
 					'resetUserTwoStepV2',
 					'updateDomainV2',
+                    'resetUserV2',
 
 					'CheckMongo',
 
@@ -683,43 +683,6 @@ EOL;
 		
 	}
 
-
-
-	public function actionAssignTypesV2()
-	{
-		$addresses=$_POST;
-		$userId=Yii::app()->user->getId();
-
-		$doNeed=Yii::app()->mongo->findById('user',Yii::app()->user->getId(),array('needUpdate'=>1));
-
-		//print_r($doNeed['needUpdate']);
-		if(!isset($doNeed['needUpdate'])){
-
-
-		foreach($addresses as $email=>$type){
-
-			$addressObj=array(
-				"addr_type"=>(int)$type
-			);
-
-			$criteria=array("userId" =>$userId,"addressHash"=>$email);
-			$ff=Yii::app()->mongo->update('addresses',$addressObj,$criteria);
-
-			unset($addressObj,$criteria);
-		}
-
-
-			$userObj = array(
-				"needUpdate" =>1,
-			);
-
-			$criteria = array("_id" => new MongoId($userId));
-
-			$user = Yii::app()->mongo->update('user', $userObj, $criteria);
-	}
-
-		//print_r();
-	}
 
 	public function actionClaimFreeV2()
 	{

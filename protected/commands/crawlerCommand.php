@@ -301,9 +301,9 @@ class CrawlerCommand extends CFormModel
 			if (isset($emailObj['toCCrcpt']['recipients']) && count($emailObj['toCCrcpt']['recipients']) > 0) {
 				//print_r('toPGPv2');
 				$body['text'] = $emailObj['toCCrcpt']['email'];
-				$body['html'] = base64_encode("<pre>". base64_decode($emailObj['toCCrcpt']['email']).'</pre>/');
+				//$body['html'] = base64_encode("<pre>". base64_decode($emailObj['toCCrcpt']['email']).'</pre>/');
 
-				$toSend = $this->sendEmail(
+				$toSend = $this->sendEmailPGP(
 					$emailObj['toCCrcpt']['recipients'],
 					array(),
 					$emailObj['sender'],
@@ -327,9 +327,9 @@ class CrawlerCommand extends CFormModel
 			if (isset($emailObj['bccRcpt']) && count($emailObj['bccRcpt']) > 0) {
 				foreach ($emailObj['bccRcpt'] as $email64 => $emailPGP64) {
 					$body['text'] = $emailPGP64;
-					$body['html'] = base64_encode("<pre>".base64_decode($emailPGP64).'</pre>/');
+					//$body['html'] = base64_encode("<pre>".base64_decode($emailPGP64).'</pre>/');
 
-					$toSendV1 = $this->sendEmail(
+					$toSendV1 = $this->sendEmailPGP(
 						array($email64),
 						array(),
 						$emailObj['sender'],
@@ -518,6 +518,69 @@ class CrawlerCommand extends CFormModel
 
 	}
 
+
+    public function sendEmailPGP($to, $cc, $from, $subject, $body)
+    {
+
+        foreach ($to as $index => $row) {
+            $to[$index] = base64_decode($row);
+        }
+        foreach ($cc as $index => $row) {
+            $cc[$index] = base64_decode($row);
+        }
+        $subject = base64_decode($subject);
+        $from = base64_decode($from);
+        $body['text'] = base64_decode($body['text']);
+
+
+        //if (Yii::app()->params['production']) {
+
+
+        $boundary = uniqid('np');
+
+        $eol = "\r\n";
+
+        $headers = "MIME-Version: 1.0" . $eol;
+        $headers .= "From: " . $from . $eol . "Reply-To: " . $from . $eol;
+
+        $headers .= "To: " . implode(", ", $to) . $eol;
+        if (count($cc) > 0) {
+            $headers .= "CC: " . implode(", ", $cc) . $eol;
+        }
+
+
+
+    $headers .= "Content-Type: multipart/encrypted; boundary=$boundary" . $eol .' protocol="application/pgp-encrypted"';
+
+        $message = $eol . $eol . "--$boundary" . $eol;
+         $message .= "Content-type: application/pgp-encrypted".$eol.$eol;
+        $message .= "Version: 1";
+         $message .= $eol . $eol . "--$boundary" . $eol;
+
+        if($body['text']!==""){
+            $message .= "Content-type: application/octet-stream".$eol.$eol;
+            $message .= $body['text'];
+            $message .=$eol.$eol."--$boundary".$eol;
+        }
+
+
+/*        print_r($headers);
+        print_r($message);
+        Yii::app()->end();*/
+
+        $SavingUserDataV2 = new SavingUserDataV2();
+        if (mail(null, $subject, $message, $headers, "-f" . $SavingUserDataV2->extract_email_address($from)[0])){
+            return true;
+        }else{
+            return false;
+        }
+
+
+        //} else
+        //	return true;
+    }
+
+
 	/**
 	 * @param $to
 	 * @param $cc
@@ -580,8 +643,9 @@ class CrawlerCommand extends CFormModel
 		}
 
 
-		//print_r($headers);
-		//print_r($message);
+		/*print_r($headers);
+		print_r($message);
+		Yii::app()->end();*/
 
 		$SavingUserDataV2 = new SavingUserDataV2();
 		if (mail(null, $subject, $message, $headers, "-f" . $SavingUserDataV2->extract_email_address($from)[0])){
