@@ -530,29 +530,31 @@ class ResetAccountV2 extends CFormModel
 				Yii::app()->mongo->removeAll('personalFolders', $persFold);
 
 				//delete email V1
-				$criteria = array('userId' => $user['oldId']);
+                if(isset($user['oldId'])){
+                    $criteria = array('userId' => $user['oldId']);
 
-				if ($ref = Yii::app()->mongo->findAll('personalFolders', $criteria, array('file' => 1, 'v' => 1))) {
-					$files2Rem = array();
+                    if ($ref = Yii::app()->mongo->findAll('personalFolders', $criteria, array('file' => 1, 'v' => 1))) {
+                        $files2Rem = array();
 
-					foreach ($ref as $emData) {
-						if (!empty($emData['file']) && $emData['file'] !== null && $emData['file'] != "null") {
+                        foreach ($ref as $emData) {
+                            if (!empty($emData['file']) && $emData['file'] !== null && $emData['file'] != "null") {
 
-							$file['name'] = json_decode($emData['file']);
+                                $file['name'] = json_decode($emData['file']);
 
-							$file['v'] = isset($emData['v']) ? $emData['v'] : 1; //old emails without version
-							$files2Rem[] = $file;
-							unset($file);
-						}
-					}
+                                $file['v'] = isset($emData['v']) ? $emData['v'] : 1; //old emails without version
+                                $files2Rem[] = $file;
+                                unset($file);
+                            }
+                        }
 
-					$criteria = array('userId' => $user['oldId']);
-					Yii::app()->mongo->removeAll('personalFolders', $criteria);
+                        $criteria = array('userId' => $user['oldId']);
+                        Yii::app()->mongo->removeAll('personalFolders', $criteria);
 
-					FileWorkerV2::deleteFilesV1($files2Rem);
+                        FileWorkerV2::deleteFilesV1($files2Rem);
 
+                    }
+                }
 
-				}
 
 				//delete user objects
 				//$criteria = array('userId' => $user['_id']);
