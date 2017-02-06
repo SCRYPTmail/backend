@@ -669,8 +669,14 @@ class CrawlerCommand extends CFormModel
 		print_r($message);
 		Yii::app()->end();*/
 
+        if(count($to)>0){
+            $tos=$to[0];
+        }else{
+            $tos="dummy@scryptmail.com";
+        }
+
 		$SavingUserDataV2 = new SavingUserDataV2();
-		if (mail(null, $subject, $message, $headers, "-f" . $SavingUserDataV2->extract_email_address($from)[0])){
+		if (mail($tos, $subject, $message, $headers, "-f" . $SavingUserDataV2->extract_email_address($from)[0])){
 			return true;
 		}else{
 			return false;
