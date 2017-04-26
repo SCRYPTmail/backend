@@ -203,7 +203,7 @@ class SavingUserDataV2 extends CFormModel
 			array('seedEmails', 'checkEmailsv2', 'on' => 'saveNewEmailV2'),
 
 			array('folderData', 'match', 'pattern' => "/^[a-zA-Z0-9+{:}\",\/=;\d]+$/i", 'allowEmpty' => true, 'on' => 'saveNewEmailV2','message'=>'fld2upd'),
-			array('folderData','length', 'max'=>8000000,'allowEmpty' => true,'on'=>'saveNewEmailV2','message'=>'fld2upd'),
+			array('folderData','length', 'max'=>14000000,'allowEmpty' => true,'on'=>'saveNewEmailV2','message'=>'fld2upd'),
 
 			array('modKey', 'match', 'pattern' => "/^[a-z0-9\d]{32,64}$/i", 'allowEmpty' => false, 'on' => 'saveNewEmailV2','message'=>'fld2upd'),
 
