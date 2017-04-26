@@ -22,7 +22,7 @@ class GetNewSeedV2 extends CFormModel
 			array('emailHashes', 'chkEmailHashes','on'=>'getData'),
 			array('lastIdKey', 'match', 'pattern' => "/^[a-z0-9\d]{24}$/i", 'allowEmpty' => true, 'on' => 'getData','message'=>'fld2upd'),
 			//
-			array('limit', 'numerical', 'integerOnly' => true, 'min'=>1, 'max'=>25, 'on' => 'getData','tooSmall'=>'limitWrong','tooBig'=>'limitWrong'),
+			array('limit', 'numerical', 'integerOnly' => true, 'min'=>1, 'max'=>50, 'on' => 'getData','tooSmall'=>'limitWrong','tooBig'=>'limitWrong'),
 			// username and password are required
 
 			//getNewMeta
