@@ -210,7 +210,7 @@ class SavingUserDataV2 extends CFormModel
 
 			//deleteEmailV2
 			array('folderData', 'match', 'pattern' => "/^[a-zA-Z0-9+{:}\",\/=;\d]+$/i", 'allowEmpty' => true, 'on' => 'deleteEmailV2','message'=>'fld2upd'),
-			array('folderData','length', 'max'=>8000000,'allowEmpty' => true,'on'=>'deleteEmailV2','message'=>'fld2upd'),
+			array('folderData','length', 'max'=>14000000,'allowEmpty' => true,'on'=>'deleteEmailV2','message'=>'fld2upd'),
 
 			array('modKey', 'match', 'pattern' => "/^[a-z0-9\d]{32,64}$/i", 'allowEmpty' => false, 'on' => 'deleteEmailV2','message'=>'fld2upd'),
 
