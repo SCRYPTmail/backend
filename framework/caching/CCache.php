@@ -72,7 +72,7 @@ abstract class CCache extends CApplicationComponent implements ICache, ArrayAcce
 	 * cache component without any serialization or deserialization. You should not turn off serialization if
 	 * you are using {@link CCacheDependency cache dependency}, because it relies on data serialization.
 	 */
-	public $serializer;
+	public $serializer=false;
 
 	/**
 	 * Initializes the application component.

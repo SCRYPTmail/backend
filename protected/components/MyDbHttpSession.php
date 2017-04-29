@@ -7,29 +7,25 @@
  */
 class MyDbHttpSession extends CDbHttpSession
 {
-	public function setUserId($userId)
+	/*public function setUserId($userId)
 	{
 		$db = $this->getDbConnection();
 		$db->setActive(true);
 
-		//print_r(Yii::app()->db->createCommand("UPDATE ".$this->sessionTableName." SET userId=:userId, id=:id WHERE id=:id"));
-		if(Yii::app()->db->createCommand("UPDATE ".$this->sessionTableName." SET userId=:userId, id=:id WHERE id=:id")->execute(array(':userId' => $userId,':id'=>session_id()))){
-		}else{
-			Yii::app()->db->createCommand("INSERT INTO ".$this->sessionTableName." (userId,id) VALUES(:userId,:id)")->execute(array(':userId' => $userId,':id'=>session_id()));
-		}
+       $person[] = array(
+            "userId" => $userId
+        );
 
-		/*$db->createCommand()->update(
-			$this->sessionTableName,
-			array('userId' => $userId),
-			'id=:id',
-			array(':id' => session_id())
-		);*/
-	}
+
+        Yii::app()->mongo->insert($this->sessionTableName, $person);
+    }
 
 	public function deleteOldUserSessions($userId)
 	{
 		$db = $this->getDbConnection();
 		$db->setActive(true);
-		Yii::app()->db->createCommand("DELETE FROM ".$this->sessionTableName." WHERE userId=:userId")->execute(array(':userId' => $userId));
-	}
+
+        $criteria=array("userId" =>$userId);
+        Yii::app()->mongo->removeAll($this->sessionTableName,$criteria);
+	}*/
 }
