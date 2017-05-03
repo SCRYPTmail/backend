@@ -254,7 +254,7 @@ class EmailparseCommand extends CFormModel
 						}
 					}
 
-					if(count($mailKeys)>0){
+					if(isset($mailKeys) && count($mailKeys)>0){
 					//	print_r($mailKeys);
 
 					//	Yii::app()->end();
