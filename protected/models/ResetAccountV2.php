@@ -256,7 +256,8 @@ class ResetAccountV2 extends CFormModel
 			'pastDue' => 0,
 			'monthlyCharge' => 0,
 			'creditUsed' => false,
-			'planData' => json_encode($newPlan)
+			'planData' => json_encode($newPlan),
+            'backVersion'=>3
 		);
 
 
@@ -286,14 +287,27 @@ class ResetAccountV2 extends CFormModel
 					"userId" => $newUSerId,
 					"userObj" => new MongoBinData($this->userObject, MongoBinData::GENERIC),
 					"profileSettings" => new MongoBinData($this->profileObject, MongoBinData::GENERIC),
-					"folderObj" => new MongoBinData($this->folderObject, MongoBinData::GENERIC),
+					//"folderObj" => new MongoBinData($this->folderObject, MongoBinData::GENERIC),
 					"contacts" => new MongoBinData($this->contactObject, MongoBinData::GENERIC),
 					"blackList" => new MongoBinData($this->blackListObject, MongoBinData::GENERIC),
 					"modKey" => hash('sha512', $this->modKey)
 				);
 
-
 				if ($userObjSaved = Yii::app()->mongo->insert('userObjects', $userObj)) {
+
+                    $folderDec = json_decode($this->folderObject, true);
+                    $newFolderDoc=array();
+
+                    foreach($folderDec as $k=>$data){
+                        $newFolderDoc[$k]=$data;
+                        $newFolderDoc[$k]['userId']=$newUSerId;
+                        $newFolderDoc[$k]['index']=(int)$newFolderDoc[$k]['index'];
+                    }
+
+
+                    Yii::app()->mongo->insert('folderObj', $newFolderDoc);
+
+
 					$addresses[] = array(
 						'addressHash' => hash('sha512', $this->email),
 						'mailKey' => array_values($key)[0],
@@ -443,7 +457,7 @@ class ResetAccountV2 extends CFormModel
 					$userObj = array(
 						"userObj" => new MongoBinData($this->userObject, MongoBinData::GENERIC),
 						"profileSettings" => new MongoBinData($this->profileObject, MongoBinData::GENERIC),
-						"folderObj" => new MongoBinData($this->folderObject, MongoBinData::GENERIC),
+					//	"folderObj" => new MongoBinData($this->folderObject, MongoBinData::GENERIC),
 						"contacts" => new MongoBinData($this->contactObject, MongoBinData::GENERIC),
 						"blackList" => new MongoBinData($this->blackListObject, MongoBinData::GENERIC),
 						"modKey" => hash('sha512', $this->modKey)
@@ -452,6 +466,21 @@ class ResetAccountV2 extends CFormModel
 					$criteria=array("userId" => $userId);
 
 					if ($userObjSaved = Yii::app()->mongo->update('userObjects', $userObj,$criteria,null,true)) {
+
+                        $criteria=array("userId" =>$userId);
+                        Yii::app()->mongo->removeAll('folderObj',$criteria);
+
+                        $folderDec = json_decode($this->folderObject, true);
+                        $newFolderDoc=array();
+
+                        foreach($folderDec as $k=>$data){
+                            $newFolderDoc[$k]=$data;
+                            $newFolderDoc[$k]['userId']=$userId;
+                            $newFolderDoc[$k]['index']=(int)$newFolderDoc[$k]['index'];
+                        }
+
+                        Yii::app()->mongo->insert('folderObj', $newFolderDoc);
+
 						$addresses = array(
 							'addressHash' => hash('sha512', $this->email),
 							'mailKey' => array_values($key)[0],
@@ -601,7 +630,7 @@ class ResetAccountV2 extends CFormModel
 						$userObj = array(
 							"userObj" => new MongoBinData($this->userObject, MongoBinData::GENERIC),
 							"profileSettings" => new MongoBinData($this->profileObject, MongoBinData::GENERIC),
-							"folderObj" => new MongoBinData($this->folderObject, MongoBinData::GENERIC),
+							//"folderObj" => new MongoBinData($this->folderObject, MongoBinData::GENERIC),
 							"contacts" => new MongoBinData($this->contactObject, MongoBinData::GENERIC),
 							"blackList" => new MongoBinData($this->blackListObject, MongoBinData::GENERIC),
 							"modKey" => hash('sha512', $this->modKey)
@@ -610,6 +639,21 @@ class ResetAccountV2 extends CFormModel
 						$criteria=array("userId" => $userId);
 
 						if ($userObjSaved = Yii::app()->mongo->update('userObjects', $userObj,$criteria,null,true)) {
+
+                            $criteria=array("userId" =>$userId);
+                            Yii::app()->mongo->removeAll('folderObj',$criteria);
+
+                            $folderDec = json_decode($this->folderObject, true);
+                            $newFolderDoc=array();
+
+                            foreach($folderDec as $k=>$data){
+                                $newFolderDoc[$k]=$data;
+                                $newFolderDoc[$k]['userId']=$userId;
+                                $newFolderDoc[$k]['index']=(int)$newFolderDoc[$k]['index'];
+                            }
+
+                            Yii::app()->mongo->insert('folderObj', $newFolderDoc);
+
 							$addresses = array(
 								'addressHash' => hash('sha512', $this->email),
 								'mailKey' => array_values($key)[0],

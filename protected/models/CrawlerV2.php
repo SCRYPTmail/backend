@@ -346,87 +346,6 @@ class CrawlerV2 extends CFormModel
 
 	}
 
-	//remove after migration is over
-	public function sendIntV1($emailsA, $sender,$attachments,$aSize)
-	{
-		//print_r($attachments);
-
-		foreach ($emailsA as $index => $emailRow) {
-			//print_r($emailRow);
-			$SavingUserDataV2 = new SavingUserDataV2();
-
-			$param[':addressHash'] = hash('sha512', $SavingUserDataV2->extract_email_address(base64_decode($emailRow['seedRcpnt']))[0]);
-			$keyRow = Yii::app()->db->createCommand("SELECT mailKey,v FROM addresses WHERE addressHash=:addressHash AND v=1")->queryRow(true, $param);
-
-			if ($keyRow['v'] == 1) {
-
-				$mngId = new MongoId();
-
-				$person[] = array(
-					"_id"=>$mngId,
-					"meta" => $emailRow['meta'],
-					"oldId"=>(string) $mngId,
-					"body" => $emailRow['mail'],
-					"pass" => $emailRow['key'],
-					"file" =>json_encode($attachments),
-					"modKey" => hash('sha512',$emailRow['modKey']),
-					"emailSize"=>strlen($emailRow['mail'])+$aSize,
-					"expireAfter" => new MongoDate(strtotime('now' . '+ 3 month'))
-				);
-
-				if ($mId = Yii::app()->mongo->insert('mailQueue', $person)) {
-					$seedMeta = array(
-						'mailId' => $mId[0],
-						'mailModKey'=>$emailRow['modKey'],
-						'seedModKey' => bin2hex(CrawlerV2::makeModKey(16))
-					);
-
-					$metaKey = CrawlerV2::makeModKey(32);
-					$seedMetaAes = CrawlerV2::toAes($metaKey, json_encode($seedMeta));
-					$seedPass64 = base64_encode(CrawlerV2::tryEncryptOld($keyRow['mailKey'], $metaKey));
-
-					$par[':meta'] = $seedMetaAes;
-					$par[':modKey'] = hash('sha512', $seedMeta['seedModKey']);
-					$par[':password'] = $seedPass64;
-					$par[':rcpnt'] = substr(hash('sha512', base64_decode($keyRow['mailKey'])), 0, 10);
-					$par[':v1'] = 15;
-
-					if (Yii::app()->db->createCommand("INSERT INTO seedTable (meta,modKey,password,rcpnt,v1) VALUES (:meta,:modKey,:password,:rcpnt,:v1)")->execute($par)) {
-
-					}
-
-				}
-
-			} else if ($keyRow['v'] == 2) {
-
-				$from = base64_encode('daemon@scryptmail.com');
-				$sub = base64_encode('Recipient Not found');
-				$body['text'] = "";
-
-				$body['html'] = base64_encode('<p> Problem with sending email to <b>(' . $SavingUserDataV2->extract_email_address(base64_decode($emailRow['seedRcpnt']))[0] . ')</b><br> Please try to send it again</p>');
-				CrawlerV2::sendEmail(array($sender), array(), $from, $sub, $body);
-
-
-			} else {
-				//not found key, prolly deleted or typos, send email to sender
-				$from = base64_encode('daemon@scryptmail.com');
-				$sub = base64_encode('Recipient Not found');
-				$body['text'] = "";
-				$body['html'] = base64_encode('<p> We can not find <b>(' . $SavingUserDataV2->extract_email_address(base64_decode($emailRow['seedRcpnt']))[0] . ')</b> in our system.<br> Please check email address or try to send it again</p>');
-				CrawlerV2::sendEmail(array($sender), array(), $from, $sub, $body);
-
-			}
-
-
-			//print_r($keyRow);
-
-			unset($person);
-		}
-
-		return true;
-
-	}
-
 	public function tryEncryptOld($publicKey, $data)
 	{
 		openssl_public_encrypt($data, $encrypted, base64_decode($publicKey), OPENSSL_PKCS1_OAEP_PADDING);
@@ -434,31 +353,6 @@ class CrawlerV2 extends CFormModel
 
 		return $encrypted;
 	}
-
-	/*public function tryEncryptNew()
-	{
-
-		$rr = Yii::app()->basePath . '/pgps/' . hash('sha256', openssl_random_pseudo_bytes(16));
-		mkdir($rr, 0777);
-		putenv("GNUPGHOME=$rr");
-		$gpg = new gnupg();
-		$gpg->seterrormode(gnupg::ERROR_EXCEPTION);
-
-		try {
-			$keys = $gpg->import($key);
-			if ($keys['imported'] == 0) {
-				exec("rm -rf {$rr}");
-				return false;
-			} else {
-				exec("rm -rf {$rr}");
-				return true;
-			}
-
-
-		} catch (Exception $e) {
-			return false;
-		}
-	}*/
 
 
 	/**

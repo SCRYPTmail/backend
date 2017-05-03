@@ -144,8 +144,8 @@ class LoginUserV2 extends CFormModel
 			Yii::app()->user->login($this->_identity, $duration);
 
 			$id=Yii::app()->user->getId();
-			//Yii::app()->session->deleteOldUserSessions($id);
-			//Yii::app()->session->setUserId($id);
+			Yii::app()->session->deleteOldUserSessions($id);
+			Yii::app()->session->updateFolderObject($id);
 
 
 			$result['response']='success';

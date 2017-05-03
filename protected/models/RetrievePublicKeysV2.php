@@ -83,26 +83,6 @@ class RetrievePublicKeysV2 extends CFormModel
 		}
 
 
-		//delete this block when migration is over
-		foreach ($emailsArray as $i => $row) {
-
-			if(!isset($result['data'][$row])){
-				$param[":mailHash_$i"] = $row;
-				$temp[] = ":mailHash_$i";
-			}
-
-		}
-
-
-		if (isset($temp) && $hashes = Yii::app()->db->createCommand(
-			"SELECT addressHash, mailKey, v FROM addresses WHERE addresses.addressHash IN(" . implode($temp, ',') . ")")->queryAll(true, $param)) {
-
-			foreach ($hashes as $row)
-			{
-				$result['data'][$row['addressHash']] = $row;
-			}
-		}
-
 		//end delete
 		echo json_encode($result);
 	}

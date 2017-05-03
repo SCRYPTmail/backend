@@ -52,60 +52,38 @@ class GetUserObjectsV2 extends CFormModel
 			$colName="blackList";
 		}
 
+        if($colName==="folderObj"){
+            $criteria=array('index'=>(int) $this->objIndex,'userId'=>$userId);
+            $objects = Yii::app()->mongo->findOne('folderObj',$criteria,array('hash' => 1,'index' => 1,'nonce' => 1,'data'=>1));
+            $result['response'] = "success";
+            unset($objects['_id']);
+            $result['data'] =$objects;
 
-		//todo remove when migration is over
-		if(Yii::app()->user->getVersion()==1)
-		{
+            echo json_encode($result);
+        }else{
+            if ($objects = Yii::app()->mongo->findByUserIdNew('userObjects', $userId, array($colName => 1))) {
 
-			if($userEncoded=Yii::app()->db->createCommand("SELECT $colName FROM user WHERE id=$userId")->queryScalar())
-			{
+                $userDec = json_decode($objects[0][$colName]->bin, true);
 
-				$userDec=json_decode($userEncoded,true);
+                if ($userDec[$this->objIndex]['index'] == $this->objIndex) {
+                    $result['response'] = "success";
+                    $result['data'] = $userDec[$this->objIndex];
+                } else {
+                    foreach ($userDec as $row) {
+                        if ($row['index'] == $this->objIndex) {
+                            $result['response'] = "success";
+                            $result['data'] = $userDec[$this->objIndex];
+                        }
+                    }
+                }
 
-				if($userDec[$this->objIndex]['index']==$this->objIndex){
-					$result['response']="success";
-					$result['data']=$userDec[$this->objIndex];
-				}else{
-					foreach($userDec as $row){
-						if($row['index']==$this->objIndex){
-							$result['response']="success";
-							$result['data']=$userDec[$this->objIndex];
-						}
-					}
-				}
+                echo json_encode($result);
 
-				echo json_encode($result);
+            } else {
+                echo '{"response":"fail"}';
+            }
+        }
 
-			}else {
-				echo '{"response":"fail"}';
-			}
-
-		}else if(Yii::app()->user->getVersion()==2) {
-
-
-			if ($objects = Yii::app()->mongo->findByUserIdNew('userObjects', $userId, array($colName => 1))) {
-
-				$userDec = json_decode($objects[0][$colName]->bin, true);
-
-				if ($userDec[$this->objIndex]['index'] == $this->objIndex) {
-					$result['response'] = "success";
-					$result['data'] = $userDec[$this->objIndex];
-				} else {
-					foreach ($userDec as $row) {
-						if ($row['index'] == $this->objIndex) {
-							$result['response'] = "success";
-							$result['data'] = $userDec[$this->objIndex];
-						}
-					}
-				}
-
-				echo json_encode($result);
-
-			} else {
-				echo '{"response":"fail"}';
-			}
-
-		}
 
 
 

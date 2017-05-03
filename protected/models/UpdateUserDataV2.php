@@ -173,12 +173,7 @@ class UpdateUserDataV2 extends CFormModel
 						if($userPlanSaved=Yii::app()->mongo->insert('addresses',$addresses))
 						{
 							$result['response']='success';
-							//$userId
 
-							//if(Yii::app()->db->createCommand("DELETE FROM user WHERE id=:id AND modKey=:modKey")->execute($param)){
-							//	Yii::app()->db->createCommand("DELETE FROM addresses WHERE userId=$userId")->execute();
-							//	Yii::app()->db->createCommand("DELETE FROM user_groups WHERE userId=$userId")->execute();
-							//}
 							$pr[':id']=$userId;
 							$pr[':newId']=$newUSerId;
 
@@ -188,8 +183,7 @@ class UpdateUserDataV2 extends CFormModel
 
 								//delete addresses from old table
 								Yii::app()->db->createCommand("DELETE FROM addresses WHERE userId=:id")->execute(array(':id'=>$userId));
-								//Yii::app()->db->createCommand("delete FROM user WHERE id=:id")->execute(array(':id'=>$userId));
-								//Yii::app()->db->createCommand("delete FROM user_groups WHERE userId=:id")->execute(array(':id'=>$userId));
+
 
 							}
 						}

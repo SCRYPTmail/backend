@@ -245,13 +245,6 @@ class EmailparseCommand extends CFormModel
 
 					$str = implode(array_keys($param), ',');
 
-
-					if (count($param)>0 && $mailKeys = Yii::app()->db->createCommand(
-						"SELECT * FROM addresses WHERE addressHash IN ($str)")->queryAll(true, $param)
-					) {
-
-					}
-
 					if(count($mailKeysNew)>0){
 
 						if(isset($mailKeys) && count($mailKeys)>0){

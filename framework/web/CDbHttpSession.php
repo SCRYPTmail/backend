@@ -209,12 +209,12 @@ class CDbHttpSession extends CHttpSession
 	public function readSession($id)
 	{
         $mngDataAgregate = array("id" => $id);
-        $data = Yii::app()->mongo->findAll($this->sessionTableName, $mngDataAgregate, array('data' => 1));
+        $data = Yii::app()->mongo->findOne($this->sessionTableName, $mngDataAgregate, array('data' => 1));
 
-        print_r($data);
+       // print_r($data['data']);
     //    Yii::app()->end();
 
-		return $data===false?'':$data;
+		return $data===false?'':$data['data'];
 	}
 
 	/**
@@ -237,7 +237,8 @@ class CDbHttpSession extends CHttpSession
 
                 $user = array(
                     "data" => $data,
-                    'expire'=>$expire
+                    'expire'=>$expire,
+                    'userId'=>Yii::app()->user->getId()
 
                 );
                 $criteria = array("id" => $id);
@@ -248,6 +249,7 @@ class CDbHttpSession extends CHttpSession
                     "id" => $id,
                     'expire'=>$expire,
                     'data'=>$data,
+                    'userId'=>Yii::app()->user->getId()
                 );
                 Yii::app()->mongo->insert($this->sessionTableName, $row);
 
