@@ -68,7 +68,7 @@ class CDbHttpSession extends CHttpSession
 	 * @var boolean whether the session DB table should be automatically created if not exists. Defaults to true.
 	 * @see sessionTableName
 	 */
-	public $autoCreateSessionTable=true;
+	public $autoCreateSessionTable=false;
 	/**
 	 * @var CDbConnection the DB connection instance
 	 */
@@ -101,33 +101,36 @@ class CDbHttpSession extends CHttpSession
 
 		parent::regenerateID(false);
 		$newID=session_id();
-		$db=$this->getDbConnection();
 
-		$row=$db->createCommand()
-			->select()
-			->from($this->sessionTableName)
-			->where('id=:id',array(':id'=>$oldID))
-			->queryRow();
-		if($row!==false)
-		{
-			if($deleteOldSession)
-				$db->createCommand()->update($this->sessionTableName,array(
-					'id'=>$newID
-				),'id=:oldID',array(':oldID'=>$oldID));
-			else
-			{
-				$row['id']=$newID;
-				$db->createCommand()->insert($this->sessionTableName, $row);
-			}
-		}
+        $mngDataAgregate=array("id"=>$oldID);
+
+        if($ref=Yii::app()->mongo->findAll($this->sessionTableName,$mngDataAgregate,array('id'=>1))){
+            if($deleteOldSession) {
+
+                $user = array(
+                    "id" => $newID,
+
+                );
+                $criteria = array("id" => $oldID);
+
+                Yii::app()->mongo->update($this->sessionTableName, $user, $criteria);
+            }
+            else
+            {
+                $row[] = array(
+                    "id" => $newID
+                );
+                Yii::app()->mongo->insert($this->sessionTableName, $row);
+            }
+        }
 		else
 		{
-			// shouldn't reach here normally
-			$db->createCommand()->insert($this->sessionTableName, array(
-				'id'=>$newID,
-				'expire'=>time()+$this->getTimeout(),
-				'data'=>'',
-			));
+            $row[] = array(
+                "id" => $newID,
+                'expire'=>new MongoDate(time()+$this->getTimeout()),
+                'data'=>'',
+            );
+            Yii::app()->mongo->insert($this->sessionTableName, $row);
 		}
 	}
 
@@ -138,7 +141,7 @@ class CDbHttpSession extends CHttpSession
 	 */
 	protected function createSessionTable($db,$tableName)
 	{
-		switch($db->getDriverName())
+/*		switch($db->getDriverName())
 		{
 			case 'mysql':
 				$blob='LONGBLOB';
@@ -159,7 +162,7 @@ class CDbHttpSession extends CHttpSession
 			'id'=>'CHAR(32) PRIMARY KEY',
 			'expire'=>'integer',
 			'data'=>$blob,
-		));
+		));*/
 	}
 
 	/**
@@ -194,19 +197,6 @@ class CDbHttpSession extends CHttpSession
 	 */
 	public function openSession($savePath,$sessionName)
 	{
-		if($this->autoCreateSessionTable)
-		{
-			$db=$this->getDbConnection();
-			$db->setActive(true);
-			try
-			{
-				$db->createCommand()->delete($this->sessionTableName,'expire<:expire',array(':expire'=>time()));
-			}
-			catch(Exception $e)
-			{
-				$this->createSessionTable($db,$this->sessionTableName);
-			}
-		}
 		return true;
 	}
 
@@ -218,17 +208,13 @@ class CDbHttpSession extends CHttpSession
 	 */
 	public function readSession($id)
 	{
-		$db=$this->getDbConnection();
-		if($db->getDriverName()=='sqlsrv' || $db->getDriverName()=='mssql' || $db->getDriverName()=='dblib')
-			$select='CONVERT(VARCHAR(MAX), data)';
-		else
-			$select='data';
-		$data=$db->createCommand()
-			->select($select)
-			->from($this->sessionTableName)
-			->where('expire>:expire AND id=:id',array(':expire'=>time(),':id'=>$id))
-			->queryScalar();
-		return $data===false?'':$data;
+        $mngDataAgregate = array("id" => $id);
+        $data = Yii::app()->mongo->findOne($this->sessionTableName, $mngDataAgregate, array('data' => 1));
+
+       // print_r($data['data']);
+    //    Yii::app()->end();
+
+		return $data===false?'':$data['data'];
 	}
 
 	/**
@@ -244,22 +230,32 @@ class CDbHttpSession extends CHttpSession
 		// http://us.php.net/manual/en/function.session-set-save-handler.php
 		try
 		{
-			$expire=time()+$this->getTimeout();
-			$db=$this->getDbConnection();
-			if($db->getDriverName()=='sqlsrv' || $db->getDriverName()=='mssql' || $db->getDriverName()=='dblib')
-				$data=new CDbExpression('CONVERT(VARBINARY(MAX), '.$db->quoteValue($data).')');
-			if($db->createCommand()->select('id')->from($this->sessionTableName)->where('id=:id',array(':id'=>$id))->queryScalar()===false)
-				$db->createCommand()->insert($this->sessionTableName,array(
-					'id'=>$id,
-					'data'=>$data,
-					'expire'=>$expire,
-				));
-			else
-				$db->createCommand()->update($this->sessionTableName,array(
-					'data'=>$data,
-					'expire'=>$expire
-				),'id=:id',array(':id'=>$id));
+			$expire=new MongoDate(time()+$this->getTimeout());
+
+            $mngDataAgregate=array("id"=>$id);
+            if($ref=Yii::app()->mongo->findAll($this->sessionTableName,$mngDataAgregate,array('id'=>1))){
+
+                $user = array(
+                    "data" => $data,
+                    'expire'=>$expire,
+                    'userId'=>Yii::app()->user->getId()
+
+                );
+                $criteria = array("id" => $id);
+                Yii::app()->mongo->update($this->sessionTableName, $user, $criteria);
+
+            }else{
+                $row[] = array(
+                    "id" => $id,
+                    'expire'=>$expire,
+                    'data'=>$data,
+                    'userId'=>Yii::app()->user->getId()
+                );
+                Yii::app()->mongo->insert($this->sessionTableName, $row);
+
+            }
 		}
+
 		catch(Exception $e)
 		{
 			if(YII_DEBUG)
@@ -278,8 +274,8 @@ class CDbHttpSession extends CHttpSession
 	 */
 	public function destroySession($id)
 	{
-		$this->getDbConnection()->createCommand()
-			->delete($this->sessionTableName,'id=:id',array(':id'=>$id));
+        $criteria=array("id" =>$id);
+        Yii::app()->mongo->removeAll($this->sessionTableName,$criteria);
 		return true;
 	}
 
@@ -291,8 +287,8 @@ class CDbHttpSession extends CHttpSession
 	 */
 	public function gcSession($maxLifetime)
 	{
-		$this->getDbConnection()->createCommand()
-			->delete($this->sessionTableName,'expire<:expire',array(':expire'=>time()));
+		//$this->getDbConnection()->createCommand()
+		//	->delete($this->sessionTableName,'expire<:expire',array(':expire'=>time()));
 		return true;
 	}
 }

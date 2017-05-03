@@ -55,7 +55,7 @@ class CDbCache extends CCache
 	 * If you already have the table created, it is recommended you set this property to be false to improve performance.
 	 * @see cacheTableName
 	 */
-	public $autoCreateCacheTable = true;
+	public $autoCreateCacheTable = false;
 	/**
 	 * @var CDbConnection the DB connection instance
 	 */
@@ -76,14 +76,14 @@ class CDbCache extends CCache
 
 		$db = $this->getDbConnection();
 		$db->setActive(true);
-		if ($this->autoCreateCacheTable) {
+	/*	if ($this->autoCreateCacheTable) {
 			$sql = "DELETE FROM {$this->cacheTableName} WHERE expire>0 AND expire<" . time();
 			try {
 				$db->createCommand($sql)->execute();
 			} catch (Exception $e) {
-				$this->createCacheTable($db, $this->cacheTableName);
+				//$this->createCacheTable($db, $this->cacheTableName);
 			}
-		}
+		}*/
 	}
 
 	/**
@@ -117,7 +117,7 @@ class CDbCache extends CCache
 	 */
 	protected function createCacheTable($db, $tableName)
 	{
-		$driver = $db->getDriverName();
+/*		$driver = $db->getDriverName();
 		if ($driver === 'mysql')
 			$blob = 'LONGBLOB';
 		elseif ($driver === 'pgsql')
@@ -131,7 +131,8 @@ CREATE TABLE $tableName
 	value $blob
 )
 EOD;
-		$db->createCommand($sql)->execute();
+		$db->createCommand($sql)->execute();*/
+
 	}
 
 	/**
@@ -171,20 +172,29 @@ EOD;
 	 * @return string|boolean the value stored in cache, false if the value is not in the cache or expired.
 	 */
 	protected function getValue($key)
-	{
-		$time = time();
-		$sql = "SELECT value FROM {$this->cacheTableName} WHERE id='$key' AND (expire=0 OR expire>$time)";
-		$db = $this->getDbConnection();
-		if ($db->queryCachingDuration > 0) {
+    {
+        $time = time();
+        //$sql = "SELECT value FROM {$this->cacheTableName} WHERE id='$key' AND (expire=0 OR expire>$time)";
+        //$db = $this->getDbConnection();
+        $mngDataAgregate = array("id" => $key);
+
+        $ref = Yii::app()->mongo->findAll($this->cacheTableName, $mngDataAgregate, array('_id' => 1, 'id' => 1, 'data' => 1));
+
+        //print_r($ref);
+       // Yii::app()->end();
+        return $ref;
+
+        /*if ($db->queryCachingDuration > 0) {
 			$duration = $db->queryCachingDuration;
 			$db->queryCachingDuration = 0;
 			$result = $db->createCommand($sql)->queryScalar();
 			$db->queryCachingDuration = $duration;
 			return $result;
 		} else
-			return $db->createCommand($sql)->queryScalar();
-	}
+			return $db->createCommand($sql)->queryScalar();*/
 
+
+    }
 	/**
 	 * Retrieves multiple values from cache with the specified keys.
 	 * @param array $keys a list of keys identifying the cached values
@@ -242,20 +252,15 @@ EOD;
 	 */
 	protected function addValue($key, $value, $expire)
 	{
-		if (!$this->_gced && mt_rand(0, 1000000) < $this->_gcProbability) {
-			$this->gc();
-			$this->_gced = true;
-		}
 
-		if ($expire > 0)
-			$expire += time();
-		else
-			$expire = 0;
-		$sql = "INSERT INTO {$this->cacheTableName} (id,expire,value) VALUES ('$key',$expire,:value)";
+        $person[] = array(
+            "id" => $key,
+            "value" => $value,
+        );
+
 		try {
-			$command = $this->getDbConnection()->createCommand($sql);
-			$command->bindValue(':value', $value, PDO::PARAM_LOB);
-			$command->execute();
+            Yii::app()->mongo->insert($this->cacheTableName, $person);
+            
 			return true;
 		} catch (Exception $e) {
 			return false;
@@ -270,8 +275,8 @@ EOD;
 	 */
 	protected function deleteValue($key)
 	{
-		$sql = "DELETE FROM {$this->cacheTableName} WHERE id='$key'";
-		$this->getDbConnection()->createCommand($sql)->execute();
+        $criteria=array("id" =>$key);
+        Yii::app()->mongo->removeAll($this->cacheTableName,$criteria);
 		return true;
 	}
 
@@ -280,7 +285,7 @@ EOD;
 	 */
 	protected function gc()
 	{
-		$this->getDbConnection()->createCommand("DELETE FROM {$this->cacheTableName} WHERE expire>0 AND expire<" . time())->execute();
+		//$this->getDbConnection()->createCommand("DELETE FROM {$this->cacheTableName} WHERE expire>0 AND expire<" . time())->execute();
 	}
 
 	/**
@@ -291,7 +296,10 @@ EOD;
 	 */
 	protected function flushValues()
 	{
-		$this->getDbConnection()->createCommand("DELETE FROM {$this->cacheTableName}")->execute();
+        $criteria=array();
+        Yii::app()->mongo->removeAll($this->cacheTableName,$criteria);
+
+		//$this->getDbConnection()->createCommand("DELETE FROM {$this->cacheTableName}")->execute();
 		return true;
 	}
 }

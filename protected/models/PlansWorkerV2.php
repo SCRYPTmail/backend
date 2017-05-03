@@ -91,9 +91,6 @@ class PlansWorkerV2 extends CFormModel
 	{
 		//$param[':userId']=$userId;
 
-		if(Yii::app()->user->getVersion()==2)
-		{
-
 			if ($planObjects = Yii::app()->mongo->findById('user', $userId, array('planData' => 1,'pastDue'=>1,'cycleStart'=>1,'cycleEnd'=>1,'created'=>1,'creditUsed'=>1,'balance'=>1,'alrdPaid'=>1,'monthlyCharge'=>1))) {
 
 				$plan['planData']=json_decode($planObjects['planData'],true);
@@ -121,9 +118,6 @@ class PlansWorkerV2 extends CFormModel
 			}else{
 				$result['response']="fail";
 			}
-		}
-
-
 
 
 		echo json_encode($result);

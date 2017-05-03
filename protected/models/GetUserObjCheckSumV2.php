@@ -49,33 +49,23 @@ class GetUserObjCheckSumV2 extends CFormModel
 			$colName="blackList";
 		}
 
-		//todo remove after migration over
-		if(Yii::app()->user->getVersion()==1){
 
-			if($userEncoded=Yii::app()->db->createCommand("SELECT $colName FROM user WHERE id=$userId")->queryScalar()){
+        if($colName==="folderObj"){
 
-				$userDec=json_decode($userEncoded,true);
-				foreach($userDec as $i=>$row){
-					unset($userDec[$i]['data']);
-				}
-				$result['response']="success";
-				$result['data']=$userDec;
+            $objects = Yii::app()->mongo->findByUserIdNew('folderObj', $userId, array('hash' => 1,'index' => 1,'nonce' => 1,'_id'=>0));
 
-				echo json_encode($result);
-			}else
-				echo '{"response":"fail"}';
+            $result['response']="success";
+            $result['data']=$objects;
+        }else{
+            $objects = Yii::app()->mongo->findByUserIdNew('userObjects', $userId, array($colName => 1));
 
-
-		}else if(Yii::app()->user->getVersion()==2){
-			$objects = Yii::app()->mongo->findByUserIdNew('userObjects', $userId, array($colName => 1));
-
-			$userDec=json_decode($objects[0][$colName]->bin,true);
-			foreach($userDec as $i=>$row){
-				unset($userDec[$i]['data']);
-			}
-			$result['response']="success";
-			$result['data']=$userDec;
-		}
+            $userDec=json_decode($objects[0][$colName]->bin,true);
+            foreach($userDec as $i=>$row){
+                unset($userDec[$i]['data']);
+            }
+            $result['response']="success";
+            $result['data']=$userDec;
+        }
 
 
 		echo json_encode($result);

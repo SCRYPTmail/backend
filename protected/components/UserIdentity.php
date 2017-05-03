@@ -10,6 +10,7 @@ class UserIdentity extends CUserIdentity
 {
 	private $_id;
 	public $version;
+    public $backVersion;
 	public $userData;
 
 	public function authenticate()
@@ -26,18 +27,17 @@ class UserIdentity extends CUserIdentity
 		else if ($user['password'] !== crypt($this->password, $user['password']))
 			$this->errorCode = self::ERROR_PASSWORD_INVALID;
 		else {
-			if($user['version']==1){
-				$this->_id = $user['id'];
-				$this->setState('version', $user['version']);
 
-			}else if($user['version']==2){
-				$this->_id = $user['_id'];
-				$this->setState('version', $user['version']);
-			}
-			//$this->version = $user['version'];
-			//$this->setVersion($user['version']);
+            $this->_id = $user['_id'];
+            $this->setState('version', $user['version']);
 
-			//print_r($this->_version);
+
+            if(isset($user['backVersion']))
+            {
+                $this->setState('backVersion', $user['backVersion']);
+            }   else{
+                $this->setState('backVersion', 2);
+            }
 
 			$this->username = $username;
 			$this->errorCode = self::ERROR_NONE;

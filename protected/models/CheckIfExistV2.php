@@ -101,11 +101,6 @@ class CheckIfExistV2 extends CFormModel
 			}
 
 		}else{
-			$param[':mailHash'] = $email;
-
-			if (Yii::app()->db->createCommand("SELECT addressHash FROM addresses WHERE addressHash=:mailHash")->queryRow(true, $param)) {
-				$return='false';
-			} else
 				$return='true';
 		}
 

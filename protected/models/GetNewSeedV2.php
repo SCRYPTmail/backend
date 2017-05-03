@@ -185,24 +185,6 @@ class GetNewSeedV2 extends CFormModel
 
 		}else if($emails1=json_decode($this->emailHashes,true)){
 
-			//remove After migration is over to new vers
-			if(isset($emails1['v1']) && is_array($emails1['v1']) && count($emails1['v1'])>0){
-				foreach($emails1['v1'] as $i=> $hash)
-						$param[":hash_$i"]=$hash;
-
-
-				if ($seedDat = Yii::app()->db
-					->createCommand('SELECT * FROM seedTable WHERE rcpnt IN ('.implode(array_keys($param),',').') LIMIT ' . $this->limit)
-					->queryAll(true,$param))
-						{
-							foreach($seedDat as $row){
-								$result['data']['v1'][$row['id']]=$row;
-							}
-							//$result['data']['v1']=$seedDat;
-
-						}
-
-				}
 			if(isset($emails1['v2'])){
 				foreach($emails1['v2'] as $i=> $hash)
 						$mngData[]=array('rcpnt'=>$hash);

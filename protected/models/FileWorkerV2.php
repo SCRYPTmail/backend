@@ -141,39 +141,16 @@ class FileWorkerV2 extends CFormModel
 		$password = Yii::app()->params['password'];
 
 
-		if($this->version==="1"){
-			$fOname=hash('sha512',$this->fileName);
-			$objectStorage = new ObjectStorage($host, $username, $password, $options);
+        $objectStorage = new ObjectStorage($host, $username, $password, $options);
 
-			$res = $objectStorage->with($folder.'/'.$fOname)->get();
-			if($res!='not found'){
-				$result['response']='success';
+        $res = $objectStorage->with($folder.'/'.$this->fileName)->get();
 
-				$data = $res->getBody();
-				$iv = hex2bin(substr($data, 0, 32));
-				$encrypted = substr($data, 32);
+        if($res!='not found'){
+            $result['response']='success';
+            $result['data']=$res->getBody();
+        }
 
-				$result['data']=base64_encode($iv).';'.$encrypted;
-			}
-		}else if($this->version==="2"){
-			//$mngData=array('pgpFileName'=>hash('sha256',$this->fileName.$userId),'modKey'=>hash('sha256', $this->modKey.$userId));
-			$objectStorage = new ObjectStorage($host, $username, $password, $options);
 
-			//print_r($this->modKey);
-			//print_r($mngData);
-			//if($file=Yii::app()->mongo->findOne('fileToObj',$mngData)){
-				$res = $objectStorage->with($folder.'/'.$this->fileName)->get();
-
-				if($res!='not found'){
-					$result['response']='success';
-					$result['data']=$res->getBody();
-				}
-
-				//print_r($file);
-			//}
-
-		}
-		//try{
 
 
 		echo json_encode($result);
@@ -218,22 +195,17 @@ class FileWorkerV2 extends CFormModel
 			$mngData=array('pgpFileName'=>hash('sha256',$this->fileName.$userId),'modKey'=>hash('sha256', $this->modKey.$userId));
 			$objectStorage = new ObjectStorage($host, $username, $password, $options);
 
-			//print_r($this->modKey);
-			//print_r($mngData);
-				if($file=Yii::app()->mongo->findOne('fileToObj',$mngData)){
-					$res = $objectStorage->with($folder.'/'.$file['pgpFileName'])->get();
+            if($file=Yii::app()->mongo->findOne('fileToObj',$mngData)){
+                $res = $objectStorage->with($folder.'/'.$file['pgpFileName'])->get();
 
-					if($res!='not found'){
-						$result['response']='success';
-						$result['data']=$res->getBody();
-					}
+                if($res!='not found'){
+                    $result['response']='success';
+                    $result['data']=$res->getBody();
+                }
 
-					//print_r($file);
-				}
+            }
 
 		}
-		//try{
-
 
 		echo json_encode($result);
 	}

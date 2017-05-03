@@ -17,7 +17,7 @@ class DeleteAccountV2 extends CFormModel
 			array('modKey', 'match', 'pattern' => "/^[a-z0-9\d]{32,64}$/i", 'allowEmpty' => false,'message'=>'fld2upd'),
 			array('emails', 'match', 'pattern' => "/^[a-f0-9+{:}\",\d]+$/i", 'allowEmpty' => false,'message'=>'fld2upd'),
 			array('lockEmail','boolean','allowEmpty'=>false),
-			array('emails','length', 'max'=>3000000,'min'=>0,'message'=>'fld2upd'),
+			array('emails','length', 'max'=>15000000,'min'=>0,'message'=>'fld2upd'),
 
 
 		);

@@ -210,7 +210,7 @@ class SavingUserDataV2 extends CFormModel
 
 			//deleteEmailV2
 			array('folderData', 'match', 'pattern' => "/^[a-zA-Z0-9+{:}\",\/=;\d]+$/i", 'allowEmpty' => true, 'on' => 'deleteEmailV2','message'=>'fld2upd'),
-			array('folderData','length', 'max'=>14000000,'allowEmpty' => true,'on'=>'deleteEmailV2','message'=>'fld2upd'),
+			array('folderData','length', 'max'=>19000000,'allowEmpty' => true,'on'=>'deleteEmailV2','message'=>'fld2upd'),
 
 			array('modKey', 'match', 'pattern' => "/^[a-z0-9\d]{32,64}$/i", 'allowEmpty' => false, 'on' => 'deleteEmailV2','message'=>'fld2upd'),
 
@@ -312,35 +312,65 @@ class SavingUserDataV2 extends CFormModel
 
 	public function updatingFolderObj($folderObj,$modKey,$userId)
 	{
-		if($object=Yii::app()->mongo->findByUserIdNew('userObjects', $userId, array('folderObj' => 1))){
+        $criteria=array('userId'=>$userId,'modKey'=>hash('sha512',$modKey));
 
-			$submitedObject=json_decode($folderObj,true);
-			$objectDecoded=json_decode($object[0]['folderObj']->bin,true);
+        if($newMails=Yii::app()->mongo->findOne('userObjects',$criteria)) {
 
-			foreach($submitedObject as $index=>$row){
+        }else{
+            return 3;
+        }
 
-				if(!isset($objectDecoded[$row['index']]) || $objectDecoded[$row['index']]['hash']!=$row['hash']){
-					if(!isset($objectDecoded[$row['index']]) || $row['nonce']>$objectDecoded[$row['index']]['nonce']){
-						$objectDecoded[$row['index']]=$row;
-					}else{
-						return 2;
-					}
-				}
-			}
+        $submitedObject=json_decode($folderObj,true);
 
-			$param[':id']=$userId;
+        foreach($submitedObject as $index=> $row)
+            $mngData[]=array('index'=>(int)$row['index']);
+
+        if(!empty($mngData)){
+            $mngDataAgregate=array("userId"=>$userId,'$or'=>$mngData);
+        }
+
+        if($ref=Yii::app()->mongo->findAll('folderObj',$mngDataAgregate,array('_id'=>0,'hash'=>1,'index'=>1,'nonce'=>1))){
+
+            foreach($ref as $index=>$row){
+                $objectDecoded[$row['index']]=$row;
+            }
+            unset($ref);
+        }
+            $count=0;
+            foreach($submitedObject as $index=>$row){
+
+                if(!isset($objectDecoded[$row['index']]) || $objectDecoded[$row['index']]['hash']!=$row['hash']){
+                    if(!isset($objectDecoded[$row['index']]) || $row['nonce']>$objectDecoded[$row['index']]['nonce']){
+
+                        $objectDecoded[$row['index']]=$row;
+
+                        $folderObj=array(
+                            "data"=>$row['data'],
+                            'index'=>(int)$row['index'],
+                            'hash'=>$row['hash'],
+                            'nonce'=>$row['nonce'],
+                            'userId'=>$userId
+                        );
+
+                        $criteria=array("userId" => $userId,'index'=>(int)$row['index']);
+
+                        if($user=Yii::app()->mongo->upsert('folderObj',$folderObj,$criteria)){
+                            $count++;
+                        }else{
+                            return 2;
+                        }
+
+                    }
+                }
+            }
+            if($count===0){
+                return 3;
+            }else{
+                return 1;
+            }
 
 
-			$folderObj=array(
-				"folderObj"=>new MongoBinData(json_encode($objectDecoded), MongoBinData::GENERIC)
-			);
-			$criteria=array("userId" => $userId,'modKey'=>hash('sha512',$modKey));
 
-			if($user=Yii::app()->mongo->update('userObjects',$folderObj,$criteria)){
-				return 1;
-			}
-
-		}
 
 	}
 
@@ -376,6 +406,7 @@ class SavingUserDataV2 extends CFormModel
 	}
 
 	public function checkEmailToDelete(){
+
 		if($EmailToDelete=json_decode($this->emailToDelete,true)){
 			foreach($EmailToDelete as $row) {
 
@@ -383,10 +414,16 @@ class SavingUserDataV2 extends CFormModel
 					$this->addError('emailId', 'notValid');
 				}
 
-				//if(!ctype_xdigit($row['modKey']) || strlen($row['modKey'])!=32){
-				//	print_r($row['modKey']);
-				//	$this->addError('modKey', 'notValid');
-				//}
+                if(count($row)!==3){
+                    $this->addError('emailFields', 'notValid');
+                }
+
+				if(!ctype_xdigit($row['modKey']) || strlen($row['modKey'])>64){
+					$this->addError('modKey', 'notValid');
+				}
+                if($row['v']!==2 && $row['v']!==3){
+                    $this->addError('version', 'notValid');
+                }
 
 			}
 		}else{
@@ -445,12 +482,7 @@ class SavingUserDataV2 extends CFormModel
 
 			if($newMails=Yii::app()->mongo->findOne('addresses',$criteria,array('addressHash'=>1))) {
 			}else{
-				$param[':userId']=Yii::app()->user->getId();
-				$param[':addressHash']=hash('sha512',$senderEmail);
-				if(!Yii::app()->db->createCommand('SELECT addressHash FROM addresses WHERE userId=:userId AND addressHash=:addressHash AND active=1 AND addr_type IN (1,3)')->queryRow(true,$param)
-				){
 					$this->addError('email', 'notValid');
-				}
 			}
 
 			if(!ctype_xdigit($encryptedEmail['refId']) && strlen($encryptedEmail['refId'])!=24)
@@ -576,13 +608,7 @@ class SavingUserDataV2 extends CFormModel
 
 			if($newMails=Yii::app()->mongo->findOne('addresses',$criteria,array('addressHash'=>1))) {
 			}else{
-
-				$param[':userId']=Yii::app()->user->getId();
-				$param[':addressHash']=hash('sha512',$senderEmail);
-				if(!Yii::app()->db->createCommand('SELECT addressHash FROM addresses WHERE userId=:userId AND addressHash=:addressHash AND active=1 AND addr_type IN (1,3)')->queryRow(true,$param)
-				){
-					$this->addError('email', 'notValid');
-				}
+                $this->addError('email', 'notValid');
 			}
 
 			if(!ctype_xdigit($encryptedEmail['refId']) && strlen($encryptedEmail['refId'])!==24)
@@ -711,13 +737,7 @@ class SavingUserDataV2 extends CFormModel
 
 			if($newMails=Yii::app()->mongo->findOne('addresses',$criteria,array('addressHash'=>1))) {
 			}else{
-				$param[':userId']=Yii::app()->user->getId();
-				$param[':addressHash']=hash('sha512',$senderEmail);
-
-				if(!Yii::app()->db->createCommand('SELECT addressHash FROM addresses WHERE userId=:userId AND addressHash=:addressHash AND active=1 AND addr_type IN (1,3)')->queryRow(true,$param)
-				){
-					$this->addError('email', 'notValid');
-				}
+                $this->addError('email', 'notValid');
 			}
 
 
@@ -924,12 +944,7 @@ class SavingUserDataV2 extends CFormModel
 
 			if($newMails=Yii::app()->mongo->findOne('addresses',$criteria,array('addressHash'=>1))) {
 			}else{
-				$param[':userId']=Yii::app()->user->getId();
-				$param[':addressHash']=hash('sha512',$senderEmail);
-				if(!Yii::app()->db->createCommand('SELECT addressHash FROM addresses WHERE userId=:userId AND addressHash=:addressHash AND active=1 AND addr_type IN (1,3)')->queryRow(true,$param)
-				){
-					$this->addError('email', 'notValid');
-				}
+                $this->addError('email', 'notValid');
 			}
 
 			if(!ctype_xdigit($encryptedEmail['refId']) && strlen($encryptedEmail['refId'])!==24)
@@ -1177,6 +1192,15 @@ class SavingUserDataV2 extends CFormModel
 	public function deleteEmailV2($userId){
 		$result['response']='fail';
 
+        $EmailToDelete=json_decode($this->emailToDelete,true);
+
+        if($res=Yii::app()->mongo->insert('email2delete',$EmailToDelete)){
+            if(SavingUserDataV2::updatingFolderObj($this->folderData,$this->modKey,$userId)==1){
+                $result['response']='success';
+                $result['data']='saved';
+            }
+        }
+/*
 		if($EmailToDelete=json_decode($this->emailToDelete,true)){
 
 			$allGoodV1=false;
@@ -1285,7 +1309,7 @@ class SavingUserDataV2 extends CFormModel
 				}
 			}
 
-		}
+		}*/
 
 		echo json_encode($result);
 	}

@@ -1333,7 +1333,7 @@ EOL;
 
 		echo 'Testing MySql: ';
 		try {
-			Yii::app()->db->createCommand("SELECT mailKey,v FROM addresses LIMIT 1")->queryRow();
+			Yii::app()->db->createCommand("SELECT id FROM virtual_domain LIMIT 1")->queryRow();
 			echo 'OK
 			<br>';
 

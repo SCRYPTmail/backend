@@ -12,24 +12,62 @@ class MyDbHttpSession extends CDbHttpSession
 		$db = $this->getDbConnection();
 		$db->setActive(true);
 
-		//print_r(Yii::app()->db->createCommand("UPDATE ".$this->sessionTableName." SET userId=:userId, id=:id WHERE id=:id"));
-		if(Yii::app()->db->createCommand("UPDATE ".$this->sessionTableName." SET userId=:userId, id=:id WHERE id=:id")->execute(array(':userId' => $userId,':id'=>session_id()))){
-		}else{
-			Yii::app()->db->createCommand("INSERT INTO ".$this->sessionTableName." (userId,id) VALUES(:userId,:id)")->execute(array(':userId' => $userId,':id'=>session_id()));
-		}
+       $person[] = array(
+            "userId" => $userId
+        );
 
-		/*$db->createCommand()->update(
-			$this->sessionTableName,
-			array('userId' => $userId),
-			'id=:id',
-			array(':id' => session_id())
-		);*/
-	}
+      //  print_r(Yii::app()->session->sessionID);
+       // Yii::app()->end();
+       // Yii::app()->mongo->insert($this->sessionTableName, $person);
+    }
 
 	public function deleteOldUserSessions($userId)
 	{
 		$db = $this->getDbConnection();
 		$db->setActive(true);
-		Yii::app()->db->createCommand("DELETE FROM ".$this->sessionTableName." WHERE userId=:userId")->execute(array(':userId' => $userId));
+
+        $criteria=array("userId" =>$userId);
+        Yii::app()->mongo->removeAll($this->sessionTableName,$criteria);
 	}
+
+    public function updateFolderObject($userId)
+    {
+        $obj = Yii::app()->mongo->findById('user', $userId, array('backVersion' => 1));
+
+        if(!isset($obj['backVersion']) || $obj['backVersion']===2){
+            //read folderobj, write into new data and update userobj
+
+            //1
+            if ($folderObj = Yii::app()->mongo->findByUserIdNew('userObjects', $userId, array('folderObj' => 1))) {
+                $folderDec = json_decode($folderObj[0]['folderObj']->bin, true);
+            }
+            $newFolderDoc=array();
+
+            foreach($folderDec as $key=>$data){
+                $newFolderDoc[$key]=$data;
+                $newFolderDoc[$key]['userId']=$userId;
+                $newFolderDoc[$key]['index']=(int)$newFolderDoc[$key]['index'];
+            }
+
+            //2
+            Yii::app()->mongo->insert('folderObj', $newFolderDoc);
+
+            //3
+            $profObj=array(
+                "backVersion"=>3
+            );
+
+            $criteria=array("_id" => new MongoId($userId));
+
+            if($message=Yii::app()->mongo->update('user',$profObj,$criteria))
+            {
+                $unset=array("folderObj"=>1);
+                $criteria=array("userId" =>$userId);
+                Yii::app()->mongo->unsetField('userObjects',$unset,$criteria);
+            }
+
+        }
+
+
+    }
 }

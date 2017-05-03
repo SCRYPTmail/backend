@@ -179,23 +179,6 @@ try {
 
 	}
 
-
-	//obsolete remove when deleting mysql user tables
-	public function findByUserId($collectionName,$userId)
-	{
-		$query = array(
-			'userId' => (int) $userId
-		);
-
-		$reference = $this->setCollection($collectionName)->find($query);
-
-		foreach ($reference as $doc)
-			$result[]=$doc;
-
-		return isset($result)?$result:null;
-
-	}
-
 	public function findByManyIds($collectionName,$arrayOfIds,$selectFields=null)
 	{
 		$query = array(
