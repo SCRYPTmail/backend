@@ -128,6 +128,7 @@ class SiteController extends Controller
 					'checkEmailExistV2',
 					'checkIfPasswordOkV2',
 					'setup2FacV2',
+                    'checkTokenHashesV2',
 					'checkDomainExistV2',
 					'savePendingDomainV2',
 					'retCustomDomainUserV2',
