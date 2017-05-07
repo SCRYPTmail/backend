@@ -359,12 +359,15 @@ class EmailparseCommand extends CFormModel
 						}else{
 							$mailKeys=$mailKeysNew;
 						}
-					}
-                    $strData = EmailparseCommand::createDraft($rawEmail, $headers, $body, $attachmentObj);
 
-                    $sender=strtolower(Yii::app()->SavingUserDataV2->extract_email_address(base64_decode($strData['draft']['meta']['from']))[0]);
 
-                    $mailKeys=$this->runThroughFilter($sender,$mailKeys);
+                    }
+                    if(isset($mailKeys) && count($mailKeys)>0){
+                        $strData = EmailparseCommand::createDraft($rawEmail, $headers, $body, $attachmentObj);
+                        $sender=strtolower(Yii::app()->SavingUserDataV2->extract_email_address(base64_decode($strData['draft']['meta']['from']))[0]);
+                        $mailKeys=$this->runThroughFilter($sender,$mailKeys);
+                    }
+
 
 					if(isset($mailKeys) && count($mailKeys)>0){
 					//	print_r($mailKeys);
