@@ -152,6 +152,113 @@ class EmailparseCommand extends CFormModel
 		return $response;
 	}
 
+    //run against service spam database, drop email if its very bad
+    public function checkFilterRulesUniversal($sender)
+    {
+        $domain64=base64_encode(explode('@', $sender)[1]);
+        $sender64=base64_encode($sender);
+
+        $mngData[]=array("txt"=>$domain64);
+        $mngData[]=array("txt"=>$sender64);
+
+        $criteria=array('$or'=>$mngData);
+
+        if($filterResult=Yii::app()->mongo->findAll('universalBlackList',$criteria,array(),null,array('mF'=>1))){
+
+            foreach ($filterResult as $index => $fRule) {
+                //    print_r($fRule);
+                //if email Match
+                if($fRule['mF']===1){
+                    if($fRule['dest']===0){
+                        return false;
+                    }else{
+                        return true;
+                    }
+                }
+                //if domain match
+                if($fRule['mF']===3){
+                    if($fRule['dest']===0){
+                        return false;
+                    }else{
+                        return true;
+                    }
+                }
+            }
+            return true;
+        }else{
+            return true;
+        }
+        //  print_r($filterResult);
+
+    }
+
+    //run against each recipient and return true if pass, false if need to be dropped
+    public function checkFilterRules($sender,$recipient)
+    {
+        $domain64=base64_encode(explode('@', $sender)[1]);
+        $sender64=base64_encode($sender);
+
+        $mngData[]=array("txt"=>$domain64);
+        $mngData[]=array("txt"=>$sender64);
+        $score=5;
+
+        $criteria=array('userId'=>$recipient,'$or'=>$mngData);
+
+        if($filterResult=Yii::app()->mongo->findAll('blackList',$criteria,array(),null,array('mF'=>1))){
+
+            foreach ($filterResult as $index => $fRule) {
+                //if email Match
+                if($fRule['mF']===1){
+                    if($fRule['dest']===0){
+                        $score=0;
+                    }else{
+                        $score=10;
+                    }
+                }
+                if($fRule['mF']===3){
+                    if($fRule['dest']===0){
+                        $score=0;
+                    }else{
+                        $score=10;
+                    }
+                }
+            }
+        }
+
+        if($score===5){
+            $criteria=array('userId'=>$recipient,"txt"=>'Kg==');
+            if($filterResult=Yii::app()->mongo->findOne('blackList',$criteria)){
+                if($filterResult['dest']===0){
+                    $score=0;
+                }else{
+                    $score=5;
+                }
+            }
+        }
+        // Yii::app()->end();
+        return $score;
+      //  print_r($filterResult);
+
+    }
+    public function runThroughFilter($sender,$recipients)
+    {
+        if(isset($recipients) && count($recipients)>0){
+            foreach ($recipients as $index => $addressData) {
+
+                $filterScore=$this->checkFilterRules($sender,$addressData['userId']);
+               if($filterScore===0){
+                    unset($recipients[$index]);
+                }else if($filterScore===5){
+                   //rule, dont exist. we will apply universal filter
+                   if(!$this->checkFilterRulesUniversal($sender)){
+                       unset($recipients[$index]);
+                   }
+               }
+            }
+        }
+
+        return $recipients;
+    }
 
 	public function run($args)
 	{
@@ -253,6 +360,11 @@ class EmailparseCommand extends CFormModel
 							$mailKeys=$mailKeysNew;
 						}
 					}
+                    $strData = EmailparseCommand::createDraft($rawEmail, $headers, $body, $attachmentObj);
+
+                    $sender=strtolower(Yii::app()->SavingUserDataV2->extract_email_address(base64_decode($strData['draft']['meta']['from']))[0]);
+
+                    $mailKeys=$this->runThroughFilter($sender,$mailKeys);
 
 					if(isset($mailKeys) && count($mailKeys)>0){
 					//	print_r($mailKeys);
@@ -260,7 +372,7 @@ class EmailparseCommand extends CFormModel
 					//	Yii::app()->end();
 
 
-						$strData = EmailparseCommand::createDraft($rawEmail, $headers, $body, $attachmentObj);
+						//$strData = EmailparseCommand::createDraft($rawEmail, $headers, $body, $attachmentObj);
 
 						$draft = $strData['draft'];
 						$attach = $strData['attach'];
