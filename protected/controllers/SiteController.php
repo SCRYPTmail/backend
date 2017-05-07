@@ -190,6 +190,10 @@ class SiteController extends Controller
                     'resetUserV2',
 
 					'CheckMongo',
+                    'getBlockedEmailsV2',
+                    'saveBlockedEmailsV2',
+                    'deleteBlockedEmailsV2',
+                    'deleteAllBlockedEmailsV2',
 
 					'getSafeBoxList',
 					'safeBox',
@@ -773,14 +777,49 @@ EOL;
 		}
 
 		echo json_encode($result);
-
-		//$model = new RetrieveMessageV2();
-		//$model->attributes = isset($_POST) ? $_POST : '';
-		//if ($model->validate())
-		//	$model->show();
-		//else
-		//	echo json_encode($model->getErrors());
 	}
+
+    public function actionGetBlockedEmailsV2()
+    {
+        $model = new BlackListV2();
+        $model->getEntries(Yii::app()->user->getId());
+
+    }
+    public function actionDeleteAllBlockedEmailsV2()
+    {
+        $model = new BlackListV2();
+        $model->deleteAll(Yii::app()->user->getId());
+
+    }
+
+
+
+
+
+    public function actionSaveBlockedEmailsV2()
+    {
+        $model = new BlackListV2('saveRule');
+        $model->attributes = isset($_POST) ? $_POST : '';
+        if ($model->validate())
+            $model->saveRule(Yii::app()->user->getId());
+        else
+            echo json_encode($model->getErrors());
+    }
+
+    public function actionDeleteBlockedEmailsV2()
+    {
+        $model = new BlackListV2('deleteRule');
+        $model->attributes = isset($_POST) ? $_POST : '';
+        if ($model->validate())
+            $model->deleteRule(Yii::app()->user->getId());
+        else
+            echo json_encode($model->getErrors());
+    }
+
+
+
+
+
 	public function actionGetPublicKeysV2()
 	{
 		$model = new GetPublicKeysV2();
