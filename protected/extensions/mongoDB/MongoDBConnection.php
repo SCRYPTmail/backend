@@ -134,7 +134,7 @@ try {
             if(!empty($sort)){
                 $reference = $this->setCollection($collectionName)->find($data,$selectFields)->sort($sort);
             }else{
-                $reference = $this->setCollection($collectionName)->find($data,$selectFields)
+                $reference = $this->setCollection($collectionName)->find($data,$selectFields);
             }
 
 		}else{
