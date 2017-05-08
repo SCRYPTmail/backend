@@ -127,13 +127,23 @@ try {
 	}
 
 
-	public function findAll($collectionName,$data,$selectFields=array(),$limit=null,$sort=array())
+	public function findAll($collectionName,$data,$selectFields=array(),$limit=null,$sort=null)
 	{
 
 		if(empty($limit)){
-			$reference = $this->setCollection($collectionName)->find($data,$selectFields)->sort($sort);
+            if(!empty($sort)){
+                $reference = $this->setCollection($collectionName)->find($data,$selectFields)->sort($sort);
+            }else{
+                $reference = $this->setCollection($collectionName)->find($data,$selectFields);
+            }
+
 		}else{
-			$reference = $this->setCollection($collectionName)->find($data,$selectFields)->sort($sort)->limit($limit);
+            if(!empty($sort)){
+                $reference = $this->setCollection($collectionName)->find($data,$selectFields)->sort($sort)->limit($limit);
+            }else{
+                $reference = $this->setCollection($collectionName)->find($data,$selectFields)->limit($limit);
+            }
+
 		}
 
 
