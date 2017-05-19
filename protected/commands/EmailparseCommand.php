@@ -122,7 +122,7 @@ class EmailparseCommand extends CFormModel
 
 
 		$gpg = new gnupg();
-		$gpg->seterrormode(gnupg::ERROR_EXCEPTION);
+		//$gpg->seterrormode(gnupg::ERROR_EXCEPTION);
 
 		//try {
 		foreach ($v2Keys as $i => $key64) {
