@@ -464,6 +464,8 @@ class ResetAccountV2 extends CFormModel
 					);
 
 					$criteria=array("userId" => $userId);
+                    $unset=array("folderObj"=>1);
+                    Yii::app()->mongo->unsetField('userObjects',$unset,$criteria);
 
 					if ($userObjSaved = Yii::app()->mongo->update('userObjects', $userObj,$criteria,null,true)) {
 
@@ -600,7 +602,7 @@ class ResetAccountV2 extends CFormModel
 
 					"mailHash" => hash('sha512', $this->email),
 					"modKey" => hash('sha512', $this->modKey),
-
+                    //todo remove google auth and yubikey
 					"tokenHash" => $this->tokenHash,
 					"tokenAesHash" => $this->tokenAesHash,
 					"active" => new MongoDate(strtotime('now'))
@@ -637,6 +639,9 @@ class ResetAccountV2 extends CFormModel
 						);
 
 						$criteria=array("userId" => $userId);
+
+                        $unset=array("folderObj"=>1);
+                        Yii::app()->mongo->unsetField('userObjects',$unset,$criteria);
 
 						if ($userObjSaved = Yii::app()->mongo->update('userObjects', $userObj,$criteria,null,true)) {
 
@@ -745,7 +750,7 @@ class ResetAccountV2 extends CFormModel
 						}
 
 					}
-					print_r($fileArrayV2);
+					//print_r($fileArrayV2);
 				}
 
 				//todo send to file delete
@@ -753,7 +758,7 @@ class ResetAccountV2 extends CFormModel
 				//$fileArrayV2
 
 
-				print_r($user);
+				//print_r($user);
 
 			} else {
 				$result['response'] = 'wrongPass';
