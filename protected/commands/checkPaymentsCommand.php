@@ -32,7 +32,6 @@ class CheckPaymentsCommand extends CFormModel
 
 			//print_r($ref);
 
-			//Yii::app()->end();
 
 			//$ref=Yii::app()->mongo->findAll('user',$mngDataAgregate,array('_id'=>1,'balance'=>1,'monthlyCharge'=>1),10)
 			foreach($ref as $userId=>$data){
