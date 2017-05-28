@@ -241,7 +241,11 @@ public $Parser;
 		$emHeader['subject']=$func($Parser->getHeader('subject'));
 
 		$emHeader['received']=date('Y-m-d H:i:s');
-		$emHeader['sent']=date('Y-m-d H:i:s',strtotime($Parser->getHeader('date')));
+        if(is_array($Parser->getHeader('date'))){
+            $emHeader['sent']=date('Y-m-d H:i:s',strtotime($Parser->getHeader('date')[0]));
+        }else{
+            $emHeader['sent']=date('Y-m-d H:i:s',strtotime($Parser->getHeader('date')));
+        }
 
 
 		$email['text']=$Parser->getMessageBody('text');

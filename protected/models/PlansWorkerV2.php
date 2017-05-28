@@ -9,15 +9,15 @@
 class PlansWorkerV2 extends CFormModel
 {
 
-	public $userId, $userToken,$modKey;
-	public $boxSize,$recipPerMail,$cDomain,$aliases,$dispEmails,$pgpStrength,$attSize,$importPGP,$contacts,$delaySend,$sendLimits,$folderExpiration,$secLog,$filtEmail;
+	public $userId, $userToken,$modKey,$planSelector;
+	public $boxSize;
 
 	public function rules()
 	{
 		return array(
 			array('userToken', 'chkToken'),
 
-			array(',aliases,boxSize,cDomain,dispEmails,pgpStrength,attSize,importPGP,contacts,delaySend,sendLimits,recipPerMail,folderExpiration,secLog,filtEmail', 'numerical', 'integerOnly'=>true,'allowEmpty' => false,'on'=>'savePlan'),
+			array('planSelector', 'numerical', 'integerOnly'=>true,'allowEmpty' => false,'on'=>'savePlan'),
 
 			array('userId', 'match', 'pattern' => "/^[a-z0-9\d]{24}$/i", 'allowEmpty' => false,'message'=>'fld2upd','on'=>'savePlan'),
 
@@ -91,7 +91,7 @@ class PlansWorkerV2 extends CFormModel
 	{
 		//$param[':userId']=$userId;
 
-			if ($planObjects = Yii::app()->mongo->findById('user', $userId, array('planData' => 1,'pastDue'=>1,'cycleStart'=>1,'cycleEnd'=>1,'created'=>1,'creditUsed'=>1,'balance'=>1,'alrdPaid'=>1,'monthlyCharge'=>1))) {
+			if ($planObjects = Yii::app()->mongo->findById('user', $userId, array('planData' => 1,'pastDue'=>1,'cycleStart'=>1,'cycleEnd'=>1,'created'=>1,'creditUsed'=>1,'balance'=>1,'alrdPaid'=>1,'monthlyCharge'=>1,'paymentVersion'=>1,'planSelected'=>1))) {
 
 				$plan['planData']=json_decode($planObjects['planData'],true);
 
@@ -105,11 +105,13 @@ class PlansWorkerV2 extends CFormModel
 				$result['data']['balance']=$planObjects['balance']/100;
 				$result['data']['alrdPaid']=$planObjects['alrdPaid']/100;
 				$result['data']['monthlyCharge']=$planObjects['monthlyCharge']/100;
+                $result['data']['paymentVersion']=isset($planObjects['paymentVersion'])?$planObjects['paymentVersion']:1;
 
+                $result['data']['planSelected']=isset($planObjects['planSelected'])?$planObjects['planSelected']:1;
 
 				$paymentApiV2 =new paymentApiV2();
 
-				$result['data']['currentCost']=$paymentApiV2->calculatePrice('return','prorated');
+				$result['data']['currentCost']=$paymentApiV2->calculatePriceOld('return','prorated');
 				$currentversion=Yii::app()->db->createCommand("SELECT systemVersion FROM versions")->queryRow();
 
 				$result['data']['currentVersion']=(int) $currentversion['systemVersion'];
@@ -135,7 +137,7 @@ class PlansWorkerV2 extends CFormModel
 			$paymentApiV2 =new paymentApiV2('calculatePrice');
 			$paymentApiV2->attributes=$this->attributes;
 
-			$price = $paymentApiV2->calculatePrice('return')*100;
+			$price = round($paymentApiV2->calculatePrice('return'));
 
 			if ($price>0 && $price - $plan['alrdPaid'] > $plan['balance']) {
 				$result['response'] = "fail";
@@ -144,38 +146,42 @@ class PlansWorkerV2 extends CFormModel
 
 			} else if ($price - $plan['alrdPaid'] <= $plan['balance'] || $price===0.00) {
 
-				$monthCharge=round($paymentApiV2->calculatePrice('return', 'full')*100);
-				$newPlan = array(
-					'bSize' => $this->boxSize,
-					'cDomain' => $this->cDomain,
-					'alias' => $this->aliases,
-					'pgpStr' => $this->pgpStrength,
-					'attSize' => $this->attSize,
-					'dispos' => $this->dispEmails,
-					'pgpImport' => $this->importPGP,
-					'contactList' => $this->contacts,
-					'delaySend' => $this->delaySend,
-					'sendLimits' => $this->sendLimits,
-					'recipPerMail'=>$this->recipPerMail,
-					'folderExpire' => $monthCharge>0?$this->folderExpiration:0,
-					'secLog' => $this->secLog,
-					'filter' => $this->filtEmail,
-				);
+				$monthCharge=round($paymentApiV2->calculatePrice('return', 'full'));
+
+				$newPlan = Yii::app()->params['params']['planData'][$this->planSelector];
+
 				$difer = $price - $plan['alrdPaid'];
 
 
-				$userObj = array(
-					"balance" => round($plan['alrdPaid'] < $price ? $plan['balance'] - ($difer) : $plan['balance']),
-					"alrdPaid" => round($plan['alrdPaid'] < $price ? $price : $plan['alrdPaid']),
-					"monthlyCharge" => $monthCharge,
-					"planData" => json_encode($newPlan),
-					"planUpdatedAt" => new MongoDate(strtotime('now'))
-				);
+                if($plan['alrdPaid']>$price && $plan['balance']<0){
 
-				$criteria = array("_id" => new MongoId($userId), 'modKey' => hash('sha512', $this->modKey));
+                    $userObj = array(
+                        "balance" => 0,
+                        "alrdPaid" => round($plan['alrdPaid'] < $price ? $price : $plan['alrdPaid']),
+                        "monthlyCharge" => $monthCharge,
+                        "planData" => json_encode($newPlan),
+                        "planUpdatedAt" => new MongoDate(strtotime('now')),
+                        "planSelected"=>$this->planSelector,
+                        "pastDue"=>0
+                    );
+                }else{
+                    $userObj = array(
+                        "balance" => round($plan['alrdPaid'] < $price ? $plan['balance'] - ($difer) : $plan['balance']),
+                        "alrdPaid" => round($plan['alrdPaid'] < $price ? $price : $plan['alrdPaid']),
+                        "monthlyCharge" => $monthCharge,
+                        "planData" => json_encode($newPlan),
+                        "planUpdatedAt" => new MongoDate(strtotime('now')),
+                        "planSelected"=>$this->planSelector
+                    );
+                }
+
+                $criteria = array("_id" => new MongoId($userId), 'modKey' => hash('sha512', $this->modKey));
 
 				if ($user = Yii::app()->mongo->update('user', $userObj, $criteria)) {
 					//$result['data']="insBal";
+                    $unset=array("userTrial"=>1);
+                    Yii::app()->mongo->unsetField('user',$unset,$criteria);
+
 				} else {
 					$result['response'] = "fail";
 					$result['data'] = "failToSave";

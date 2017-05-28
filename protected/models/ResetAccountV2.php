@@ -229,7 +229,7 @@ class ResetAccountV2 extends CFormModel
 
 		//Yii::app()->end();
 
-		$newPlan = Yii::app()->params['params']['planData'];
+		$newPlan = Yii::app()->params['params']['planData'][1];
 
 		$Crawler = new CrawlerV2();
 		$salt = base64_encode(($Crawler->makeModKey(10)));
@@ -250,14 +250,17 @@ class ResetAccountV2 extends CFormModel
 			"2ndType" => null,
 
 			'cycleStart' => new MongoDate(strtotime('now')),
-			'cycleEnd' => new MongoDate(strtotime('now' . '+ 1 month')),
+			'cycleEnd' => new MongoDate(strtotime('now' . '+ 1 week')),
 			'balance' => 0,
 			'alrdPaid' => 0,
 			'pastDue' => 0,
 			'monthlyCharge' => 0,
 			'creditUsed' => false,
 			'planData' => json_encode($newPlan),
-            'backVersion'=>3
+            'backVersion'=>3,
+            'paymentVersion'=>2,
+            'planSelected'=>1,
+            'userTrial'=>true
 		);
 
 
@@ -427,7 +430,8 @@ class ResetAccountV2 extends CFormModel
 				"mailHash" => hash('sha512', $this->email),
 				"password" => crypt($this->newPass, '$6$' . $salt . '$'),
 				"modKey" => hash('sha512', $this->modKey),
-
+                "authSecret"=>null,
+                "2ndType"=>null,
 				"tokenHash" => $this->tokenHash,
 				"tokenAesHash" => $this->tokenAesHash,
 				"active" => new MongoDate(strtotime('now'))
@@ -602,7 +606,8 @@ class ResetAccountV2 extends CFormModel
 
 					"mailHash" => hash('sha512', $this->email),
 					"modKey" => hash('sha512', $this->modKey),
-                    //todo remove google auth and yubikey
+                    "authSecret"=>null,
+                    "2ndType"=>null,
 					"tokenHash" => $this->tokenHash,
 					"tokenAesHash" => $this->tokenAesHash,
 					"active" => new MongoDate(strtotime('now'))
