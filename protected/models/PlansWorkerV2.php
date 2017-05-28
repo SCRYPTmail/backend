@@ -132,7 +132,7 @@ class PlansWorkerV2 extends CFormModel
 
 		$result['response']="success";
 
-		if ($plan = Yii::app()->mongo->findById('user', $userId, array('planData' => 1,'alrdPaid'=>1,'balance'=>1,''))) {
+		if ($plan = Yii::app()->mongo->findById('user', $userId, array('planData' => 1,'alrdPaid'=>1,'balance'=>1,'paymentVersion'=>1,''))) {
 
 			$paymentApiV2 =new paymentApiV2('calculatePrice');
 			$paymentApiV2->attributes=$this->attributes;
@@ -152,7 +152,6 @@ class PlansWorkerV2 extends CFormModel
 
 				$difer = $price - $plan['alrdPaid'];
 
-
                 if($plan['alrdPaid']>$price && $plan['balance']<0){
 
                     $userObj = array(
@@ -162,7 +161,8 @@ class PlansWorkerV2 extends CFormModel
                         "planData" => json_encode($newPlan),
                         "planUpdatedAt" => new MongoDate(strtotime('now')),
                         "planSelected"=>$this->planSelector,
-                        "pastDue"=>0
+                        "pastDue"=>0,
+
                     );
                 }else{
                     $userObj = array(
@@ -173,6 +173,9 @@ class PlansWorkerV2 extends CFormModel
                         "planUpdatedAt" => new MongoDate(strtotime('now')),
                         "planSelected"=>$this->planSelector
                     );
+                }
+                if(!isset($plan['paymentVersion'])){
+                    $userObj['paymentVersion']=2;
                 }
 
                 $criteria = array("_id" => new MongoId($userId), 'modKey' => hash('sha512', $this->modKey));
