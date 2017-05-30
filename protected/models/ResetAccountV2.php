@@ -254,7 +254,7 @@ class ResetAccountV2 extends CFormModel
 			'balance' => 0,
 			'alrdPaid' => 0,
 			'pastDue' => 0,
-			'monthlyCharge' => 0,
+			'monthlyCharge' => Yii::app()->params['params']['planData'][1]['price'],
 			'creditUsed' => false,
 			'planData' => json_encode($newPlan),
             'backVersion'=>3,
