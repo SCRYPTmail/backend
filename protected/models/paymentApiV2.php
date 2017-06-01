@@ -17,7 +17,7 @@ class paymentApiV2 extends CFormModel
 		return array(
 			array('userToken', 'chkToken'),
 
-			array('aliases,boxSize,cDomain,dispEmails,pgpStrength,attSize,importPGP,contacts,delaySend,sendLimits,recipPerMail,folderExpiration,secLog,filtEmail', 'numerical', 'integerOnly'=>true,'allowEmpty' => false,'on'=>'bitcoinCreateOrder'),
+			array('planSelector', 'numerical', 'integerOnly'=>true,'allowEmpty' => false,'on'=>'bitcoinCreateOrder'),
 
 			array('userId', 'match', 'pattern' => "/^[a-z0-9\d]{24}$/i", 'allowEmpty' => false,'message'=>'fld2upd','on'=>'bitcoinCreateOrder'),
 
@@ -380,7 +380,7 @@ class paymentApiV2 extends CFormModel
 		$timestamp = $fecha->getTimestamp();
 		$request="/v2/checkouts";
 		$prebody=array(
-			"amount"=> "1.00",
+			"amount"=> Yii::app()->params['params']['planData'][$this->planSelector]['price']/100,
 			"currency"=> "USD",
 			"name"=> "SCRYPTmail Refill",
 			"customer_defined_amount"=>"true",
