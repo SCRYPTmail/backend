@@ -319,11 +319,19 @@ class CheckLimitsV2 extends CFormModel
 	{
 		$userId=Yii::app()->user->getId();
 
+        $continue=false;
 		if($userPlanString=Yii::app()->mongo->findById('user',$userId,array('planData'=>1,'pastDue'=>1)))
 		{
 			if($userPlanString['pastDue']>0){
-				return 'pastDue';
-			}else{
+                if($this->userAction!=="sendemailintv2"){
+                    return 'pastDue';
+                }else{
+                    $continue=true;
+                }
+			}else {
+                $continue = true;
+            }
+            if($continue){
 				$userPlanStringDecoded=json_decode($userPlanString['planData'],true);
 
 				$limits=$userPlanStringDecoded['sendLimits'];
