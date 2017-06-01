@@ -968,17 +968,17 @@ class SavingUserDataV2 extends CFormModel
 
 
                 if ($limitsJSON['pastDue'] >0) {
-                    if(isset(json_decode($this->emailData,true)['toCCrcpt']['recipients'][0])){
-
+                    if(isset(json_decode($this->emailData,true)['toCCrcpt']['recipients'][0]) && count(json_decode($this->emailData,true)['toCCrcpt']['recipients'])==1){
                         $email=SavingUserDataV2::extract_email_address(base64_decode(json_decode($this->emailData,true)['toCCrcpt']['recipients'][0]))[0];
 
                         if(!in_array($email,Yii::app()->params['trustedSenders'])){
                             $this->addError('account', 'pastDue');
                         }
 
+                    }else{
+                        $this->addError('account', 'pastDue');
                     }
                 }
-
 				$sendLimits = $limits['recipPerMail'];
 				if($totalRecipients>$sendLimits){
 					$this->addError('recipPerMail', 'overLimit');
