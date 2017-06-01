@@ -359,7 +359,7 @@ class paymentApiV2 extends CFormModel
 
 	public function bitcoinCreateOrder()
 	{
-		$price=$this->calculatePrice('return','full');
+		//$price=$this->calculatePrice('return','full');
 
 
 		//todo recalculate price prorated
@@ -380,7 +380,7 @@ class paymentApiV2 extends CFormModel
 		$timestamp = $fecha->getTimestamp();
 		$request="/v2/checkouts";
 		$prebody=array(
-			"amount"=> Yii::app()->params['params']['planData'][$this->planSelector]['price']/100,
+			"amount"=> "5",
 			"currency"=> "USD",
 			"name"=> "SCRYPTmail Refill",
 			"customer_defined_amount"=>"true",
