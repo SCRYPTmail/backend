@@ -202,7 +202,7 @@ class CallBacksV2 extends CFormModel
 					PlansWorkerV2::savePlanHistory($data['userId'],$histData);
 				}
 
-			}else if(strtolower($type)!=="donation" && $type!="Please consider donating at least $0.3 to cover PayPal processing fees"){
+			}else if($status!="Canceled_Reversal" && strtolower($type)!=="donation" && $type!="Please consider donating at least $0.3 to cover PayPal processing fees"){
 
 				$histData['type']="4";
 				$histData['description']="Order mispaid,expired or wrong currency";
