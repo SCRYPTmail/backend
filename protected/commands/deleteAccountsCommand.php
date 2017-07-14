@@ -67,21 +67,26 @@ class DeleteAccountsCommand extends CFormModel
 					}
 
 
-					$mngDataAgregate=array('$or'=>$mngData);
+                    if(isset($mngData)){
+                        $mngDataAgregate=array('$or'=>$mngData);
 
-					if($emails=Yii::app()->mongo->findAll('personalFolders',$mngDataAgregate,array('file'=>1,'v'=>1))){
-						foreach($emails as $emailId=>$emailData){
+                        if($emails=Yii::app()->mongo->findAll('personalFolders',$mngDataAgregate,array('file'=>1,'v'=>1))){
+                            foreach($emails as $emailId=>$emailData){
 
-							if((!isset($emailData['v']) || $emailData['v']!==2) && isset($emailData['file']) && $emailData['file']!=='null'){
-								$filesV1[]=json_decode($emailData['file'],true);
-							}
+                                if((!isset($emailData['v']) || $emailData['v']!==2) && isset($emailData['file']) && $emailData['file']!=='null'){
+                                    $filesV1[]=json_decode($emailData['file'],true);
+                                }
 
-						}
-						//5) delete emails associated
-						Yii::app()->mongo->removeAll('personalFolders',$mngDataAgregate);
+                            }
+                            //5) delete emails associated
+                            Yii::app()->mongo->removeAll('personalFolders',$mngDataAgregate);
 
-						$this->deleteV1($filesV1);
-					}
+                            $this->deleteV1($filesV1);
+                        }
+                    }
+
+
+
 				}
 
 				//delete user
