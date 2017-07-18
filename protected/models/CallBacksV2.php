@@ -61,7 +61,12 @@ class CallBacksV2 extends CFormModel
 			//print_r($jDecodedData);
 
 			$status=$jDecodedData['payment_status'];
-			$type=$jDecodedData['item_number'];
+
+            if(isset($jDecodedData['item_number']))
+            {
+                $type=$jDecodedData['item_number'];
+            }
+
 			//print_r($status);
 
 			$data['amountCents']=$jDecodedData['mc_gross']*100;
@@ -76,7 +81,9 @@ class CallBacksV2 extends CFormModel
 				$data['orderId']=$jDecodedData['parent_txn_id'];
 			}else if($status=="Failed"){
 				$data['orderId']=$jDecodedData['txn_id'];
-			}
+			}else if($status=="Reversed") {
+                $data['orderId'] = $jDecodedData['parent_txn_id'];
+            }
 
 			if($status=="Completed" && $data['amountCurrency']=="USD" && strlen($data['userId'])==24){
 				$param[':userId']=$data['userId'];
