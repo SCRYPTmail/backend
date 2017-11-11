@@ -215,7 +215,7 @@ class CallBacksV2 extends CFormModel
 				$histData['description']="Order mispaid,expired or wrong currency";
 				$histData['amount']=$data['amountCents'];
 				$histData['author']=3;
-				$histData['orderId']=$data['orderId'];
+				$histData['orderId']=isset($data['orderId'])?$data['orderId']:$data['txn_id'];
 				$histData['callbackData']=json_encode($jDecodedData);;
 
 				PlansWorkerV2::savePlanHistory($data['userId'],$histData);

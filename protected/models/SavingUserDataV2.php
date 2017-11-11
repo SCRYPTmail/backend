@@ -311,58 +311,59 @@ class SavingUserDataV2 extends CFormModel
 	}
 
 	public function updatingFolderObj($folderObj,$modKey,$userId)
-	{
-        $criteria=array('userId'=>$userId,'modKey'=>hash('sha512',$modKey));
+    {
+        $criteria = array('userId' => $userId, 'modKey' => hash('sha512', $modKey));
 
-        if($newMails=Yii::app()->mongo->findOne('userObjects',$criteria)) {
+        if ($newMails = Yii::app()->mongo->findOne('userObjects', $criteria)) {
 
-        }else{
+        } else {
             return 3;
         }
 
-        $submitedObject=json_decode($folderObj,true);
+        $submitedObject = json_decode($folderObj, true);
 
-        foreach($submitedObject as $index=> $row)
-            $mngData[]=array('index'=>(int)$row['index']);
+        foreach ($submitedObject as $index => $row)
+            $mngData[] = array('index' => (int)$row['index']);
 
-        if(!empty($mngData)){
-            $mngDataAgregate=array("userId"=>$userId,'$or'=>$mngData);
-        }
+        if (!empty($mngData)) {
+            $mngDataAgregate = array("userId" => $userId, '$or' => $mngData);
 
-        if($ref=Yii::app()->mongo->findAll('folderObj',$mngDataAgregate,array('_id'=>0,'hash'=>1,'index'=>1,'nonce'=>1))){
 
-            foreach($ref as $index=>$row){
-                $objectDecoded[$row['index']]=$row;
+        if ($ref = Yii::app()->mongo->findAll('folderObj', $mngDataAgregate, array('_id' => 0, 'hash' => 1, 'index' => 1, 'nonce' => 1))) {
+
+            foreach ($ref as $index => $row) {
+                $objectDecoded[$row['index']] = $row;
             }
             unset($ref);
         }
-            $count=0;
-            foreach($submitedObject as $index=>$row){
+        $count = 0;
+        foreach ($submitedObject as $index => $row) {
 
-                if(!isset($objectDecoded[$row['index']]) || $objectDecoded[$row['index']]['hash']!=$row['hash']){
-                    if(!isset($objectDecoded[$row['index']]) || $row['nonce']>$objectDecoded[$row['index']]['nonce']){
+            if (!isset($objectDecoded[$row['index']]) || $objectDecoded[$row['index']]['hash'] != $row['hash']) {
+                if (!isset($objectDecoded[$row['index']]) || $row['nonce'] > $objectDecoded[$row['index']]['nonce']) {
 
-                        $objectDecoded[$row['index']]=$row;
+                    $objectDecoded[$row['index']] = $row;
 
-                        $folderObj=array(
-                            "data"=>$row['data'],
-                            'index'=>(int)$row['index'],
-                            'hash'=>$row['hash'],
-                            'nonce'=>$row['nonce'],
-                            'userId'=>$userId
-                        );
+                    $folderObj = array(
+                        "data" => $row['data'],
+                        'index' => (int)$row['index'],
+                        'hash' => $row['hash'],
+                        'nonce' => $row['nonce'],
+                        'userId' => $userId
+                    );
 
-                        $criteria=array("userId" => $userId,'index'=>(int)$row['index']);
+                    $criteria = array("userId" => $userId, 'index' => (int)$row['index']);
 
-                        if($user=Yii::app()->mongo->upsert('folderObj',$folderObj,$criteria)){
-                            $count++;
-                        }else{
-                            return 2;
-                        }
-
+                    if ($user = Yii::app()->mongo->upsert('folderObj', $folderObj, $criteria)) {
+                        $count++;
+                    } else {
+                        return 2;
                     }
+
                 }
             }
+        }
+    }
             if($count===0){
                 return 3;
             }else{

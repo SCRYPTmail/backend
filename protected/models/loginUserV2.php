@@ -39,7 +39,7 @@ class LoginUserV2 extends CFormModel
 
 				$this->_identity = new UserIdentity($this->username, $this->newPassword);
 				if (!$this->_identity->authenticate()) {
-					$this->username = str_replace('@scryptmail.com', '', $this->username);
+					$this->username = str_replace('@'.Yii::app()->params['params']['registeredDomain'], '', $this->username);
 					$this->addError('username', 'Incorrect username or password.');
 				}
 			}

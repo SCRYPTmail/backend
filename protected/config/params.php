@@ -8,6 +8,7 @@ return array(
 	'allowedDomains' => array( // can login and modify profile
 		'scryptmail.com'
 	),
+    'registeredDomain'=>'scryptmail.com',
 	'planData'=>array(
         0=>array(
             'bSize'=>200,
