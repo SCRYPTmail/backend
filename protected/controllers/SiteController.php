@@ -1373,7 +1373,7 @@ EOL;
 
 		echo 'Testing MySql: ';
 		try {
-			Yii::app()->db->createCommand("SELECT id FROM virtual_domain LIMIT 1")->queryRow();
+			Yii::app()->db->createCommand("SELECT id FROM virtual_domains LIMIT 1")->queryRow();
 			echo 'OK
 			<br>';
 

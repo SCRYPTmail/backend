@@ -278,7 +278,8 @@ class ResetAccountV2 extends CFormModel
 
 		$dom = explode('@', strtolower($this->email))[1];
 
-		if ($CheckIfExistV2->validateEmail('', 'df') === 'true' && $dom === 'scryptmail.com') {
+
+		if ($CheckIfExistV2->validateEmail('', 'df') === 'true' && $dom === Yii::app()->params['params']['registeredDomain']) {
 			//if($CheckIfExistV2->validateEmail('','df')==='true' && $dom==='scryptmail.com' && $checkKey){
 
 
@@ -451,7 +452,7 @@ class ResetAccountV2 extends CFormModel
 
 			//todo verify if exist not the opposite
 
-			if ($CheckIfExistV2->validateEmail('', 'df') === 'false' && $dom === 'scryptmail.com') {
+			if ($CheckIfExistV2->validateEmail('', 'df') === 'false' && $dom === Yii::app()->params['params']['registeredDomain']) {
 
 				//if($CheckIfExistV2->validateEmail('','df')==='true' && $dom==='scryptmail.com' && $checkKey){
 
@@ -627,7 +628,7 @@ class ResetAccountV2 extends CFormModel
 
 				//todo verify if exist not the opposite
 
-				if ($CheckIfExistV2->validateEmail('', 'df') === 'false' && $dom === 'scryptmail.com') {
+				if ($CheckIfExistV2->validateEmail('', 'df') === 'false' && $dom === Yii::app()->params['params']['registeredDomain']) {
 
 					//if($CheckIfExistV2->validateEmail('','df')==='true' && $dom==='scryptmail.com' && $checkKey){
 

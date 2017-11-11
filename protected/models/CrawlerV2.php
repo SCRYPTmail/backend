@@ -224,7 +224,7 @@ class CrawlerV2 extends CFormModel
 						$message['text'] = "";
 						$message['html'] = file_get_contents(Yii::app()->basePath . '/views/templates/emailWithPin.php');
 						$message['html'] = str_replace('*|SENDER|*', htmlentities(base64_decode($from)), $message['html']);
-						$message['html'] = str_replace('*|LINK_TO_MESSAGE|*', 'https://scryptmail.com/#retrieveEmailV2/' . $rowId[0], $message['html']);
+						$message['html'] = str_replace('*|LINK_TO_MESSAGE|*', 'https://'.Yii::app()->params['params']['registeredDomain'].'/#retrieveEmailV2/' . $rowId[0], $message['html']);
 						$message['html'] = base64_encode($message['html']);
 		
 						if ($ccBool) {
@@ -262,7 +262,7 @@ class CrawlerV2 extends CFormModel
 						$message['text'] = "";
 						$message['html'] = file_get_contents(Yii::app()->basePath . '/views/templates/emailWithPin.php');
 						$message['html'] = str_replace('*|SENDER|*', htmlentities(base64_decode($from)), $message['html']);
-						$message['html'] = str_replace('*|LINK_TO_MESSAGE|*', 'https://scryptmail.com/#retrieveEmailV2/' . $rowId[0], $message['html']);
+						$message['html'] = str_replace('*|LINK_TO_MESSAGE|*', 'https://'.Yii::app()->params['params']['registeredDomain'].'/#retrieveEmailV2/' . $rowId[0], $message['html']);
 						$message['html'] = base64_encode($message['html']);
 						if ($bccBool) {
 							$bccBool = CrawlerV2::sendEmail(array($recipient), array(), $from, $subject, $message);
