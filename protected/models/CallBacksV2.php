@@ -107,7 +107,7 @@ class CallBacksV2 extends CFormModel
 						$alrdPaid=$currentData['alrdPaid']+$data['amountCents'];
 					}
 
-					if($currentData['balance']>0 || $data['amountCents']+$currentData['balance']>0){
+					if($currentData['balance']>=0 || $data['amountCents']+$currentData['balance']>=0){
 						$pastDue=0;
 					}else{
 						$pastDue=1;
@@ -269,8 +269,7 @@ class CallBacksV2 extends CFormModel
 			$data['amountCurrency']=$jDecodedData['order']['mispaid_native']['currency_iso'];
 
 
-
-		}else if($status=="completed"){
+		}else if($status=="completed" || $status=="mispaid" || $status=="expired"){
 			$data['amountCents']=$jDecodedData['order']['total_native']['cents'];
 			$data['amountCurrency']=$jDecodedData['order']['total_native']['currency_iso'];
 		}
@@ -278,7 +277,7 @@ class CallBacksV2 extends CFormModel
 		$data['status']=$jDecodedData['order']['status'];
 		$data['orderId']=$jDecodedData['order']['id'];
 
-		if($status=="completed" && $data['amountCurrency']=="USD"){
+		if(($status=="completed" || $status=="mispaid" || $status=="expired" ) && $data['amountCurrency']=="USD"){
 			$param[':userId']=$data['userId'];
 			$param[':balance']=$data['amountCents'];
 
@@ -298,7 +297,7 @@ class CallBacksV2 extends CFormModel
 					$alrdPaid=$currentData['alrdPaid']+$data['amountCents'];
 				}
 
-				if($currentData['balance']>0 || $data['amountCents']+$currentData['balance']>0){
+				if($currentData['balance']>=0 || $data['amountCents']+$currentData['balance']>=0){
 					$pastDue=0;
 				}else{
 					$pastDue=1;
