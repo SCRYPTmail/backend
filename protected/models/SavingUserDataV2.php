@@ -245,18 +245,32 @@ class SavingUserDataV2 extends CFormModel
 
 			$emails=array();
 			foreach(preg_split('/\s/', $broken[1]) as $token) {
-				$email = filter_var(filter_var($token, FILTER_SANITIZE_EMAIL), FILTER_VALIDATE_EMAIL);
-				if ($email !== false) {
+
+                if(strlen($token)<80){
+                    $email = filter_var(filter_var($token, FILTER_SANITIZE_EMAIL), FILTER_VALIDATE_EMAIL);
+                }else if(strlen($token)<320){
+                    $email = filter_var($token, FILTER_SANITIZE_EMAIL);
+                }
+
+
+				if ($email !== false && strlen($email)<320) {
 					$emails[] = strtolower($email);
 				}
+
 			}
 
-		}else{
+
+        }else{
 			$emails=array();
 			foreach(preg_split('/\s/', $string) as $token) {
 
-				$email = filter_var(filter_var($token, FILTER_SANITIZE_EMAIL), FILTER_VALIDATE_EMAIL);
-				if ($email !== false) {
+                if(strlen($token)<80){
+                    $email = filter_var(filter_var($token, FILTER_SANITIZE_EMAIL), FILTER_VALIDATE_EMAIL);
+                }else if(strlen($token)<320){
+                    $email = filter_var($token, FILTER_SANITIZE_EMAIL);
+                }
+
+                if ($email !== false && strlen($email)<320) {
 					$emails[] = strtolower($email);
 				}
 			}
