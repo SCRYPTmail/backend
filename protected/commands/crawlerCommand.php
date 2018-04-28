@@ -101,19 +101,26 @@ class CrawlerCommand extends CFormModel
 				foreach($emailObj['toCCrcpt']['recipients'] as $index=>$email64){
 
 					$SavingUserDataV2 = new SavingUserDataV2();
-					$email= $SavingUserDataV2->extract_email_address(base64_decode($email64))[0];
+                    $ema=$SavingUserDataV2->extract_email_address(base64_decode($email64));
+                    if(isset($ema[0])){
 
-					$emailSHA512=hash('sha512',$email);
-					$person[] = array(
-						"meta" => $emailObj['toCCrcpt']['meta'],
-						"body" => $emailObj['toCCrcpt']['email'],
-						"modKey" => $emailObj['modKey'],
-						"rcpnt"=> substr($emailSHA512,0,10),
-						'file'=>json_encode($emailObj['attachments']),
-						'emailSize'=>strlen($emailObj['toCCrcpt']['email'])+$emailObj['aSize'],
-						"expireAfter" => new MongoDate(strtotime('now' . '+ 1 year')),
-						"timeSent"=>time()
-					);
+                        $email= $ema[0];
+
+                        $emailSHA512=hash('sha512',$email);
+                        $person[] = array(
+                            "meta" => $emailObj['toCCrcpt']['meta'],
+                            "body" => $emailObj['toCCrcpt']['email'],
+                            "modKey" => $emailObj['modKey'],
+                            "rcpnt"=> substr($emailSHA512,0,10),
+                            'file'=>json_encode($emailObj['attachments']),
+                            'emailSize'=>strlen($emailObj['toCCrcpt']['email'])+$emailObj['aSize'],
+                            "expireAfter" => new MongoDate(strtotime('now' . '+ 1 year')),
+                            "timeSent"=>time()
+                        );
+
+                    }else{
+                    }
+
 				}
 
 				if ($mId = Yii::app()->mongo->insert('mailQv2', $person)) {
