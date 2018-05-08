@@ -369,38 +369,37 @@ class paymentApiV2 extends CFormModel
 		//woring POST
 		$Key = Yii::app()->params['coinKey'];
 		$Secret = Yii::app()->params['coinSecret'];
+        $K=Yii::app()->params['coinK'];
 
 		$time = time();
 		//echo $time;
-		$urlapi = "https://api.coinbase.com/v2/checkouts";
+		$urlapi = "https://api.commerce.coinbase.com/charges";
 
 		//$Key = "--------------";
 		//$Secret = "------------";
 		$fecha = new DateTime();
 		$timestamp = $fecha->getTimestamp();
-		$request="/v2/checkouts";
+		//$request="charges";
 		$prebody=array(
-			"amount"=> "5",
-			"currency"=> "USD",
-			"name"=> "SCRYPTmail Refill",
-			"customer_defined_amount"=>"true",
-			"description"=> "Please enter amount",
-			"metadata"=> array(
-				"customer_id"=>$this->userId
-			)
+            "name"=> "SCRYPTmail Refill",
+         "description"=>  "Refill your SCRYPTmail balance",
+       "pricing_type"=>  "no_price",
+         "metadata"=>  array(
+        "customer_id"=>  $this->userId
+         )
+
 		);
 		$body=json_encode($prebody);
 		$method="POST";
-		$Datas = $timestamp . $method . $request . $body;
-		$hmacSig = hash_hmac('sha256',$Datas,$Secret);
+		//$Datas = $timestamp . $method . $request . $body;
+		//$hmacSig = hash_hmac('sha256',$Datas,$Secret);
 		$curl = curl_init($urlapi);
 		curl_setopt($curl,CURLOPT_HTTPHEADER,array
 		(
 			'Content-Type: application/json',
-			'CB-ACCESS-KEY: '.$Key,
-			'CB-VERSION: 2015-07-07',
-			'CB-ACCESS-TIMESTAMP: '. $timestamp,
-			'CB-ACCESS-SIGN: '.$hmacSig));
+			'X-CC-Api-Key: '.$K,
+			'X-CC-Version: 2018-03-22',
+			));
 		curl_setopt($curl, CURLOPT_POSTFIELDS, $body);
 
 		curl_setopt($curl, CURLOPT_RETURNTRANSFER, TRUE);
@@ -422,7 +421,7 @@ class paymentApiV2 extends CFormModel
 		try {
 			$response=json_decode($resp,true);
 			//print_r($response);
-			$result['data']['embed_code']=$response['data']['embed_code'];
+			$result['data']['embed_code']=$response['data']['hosted_url'];
 
 		} catch (Exception $e) {
 			$result['response']="fail";
