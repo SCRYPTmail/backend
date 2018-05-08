@@ -247,7 +247,7 @@ class CallBacksV2 extends CFormModel
 		if (Yii::app()->params['production']) {
 			$jEncodedData=file_get_contents('php://input');
 		}else{
-			$jEncodedData=file_get_contents('/work/scryptmail/callback.txt');
+			$jEncodedData=file_get_contents('callb');
 		}
 
 		//$jEncodedData=file_get_contents('/work/scryptmail/callbackMiss.txt');
@@ -257,27 +257,31 @@ class CallBacksV2 extends CFormModel
 
 		$jDecodedData=json_decode($jEncodedData,true);
 
-		$status=$jDecodedData['order']['status'];
+		$status=$jDecodedData['event']['data']['payments'][0]['status'];
 
 		//mispaid
 		//completed
 		//expired
 
-		if($status=="mispaid" || $status=="expired"){
+
+/*		if($status=="mispaid" || $status=="expired"){
 
 			$data['amountCents']=$jDecodedData['order']['mispaid_native']['cents'];
 			$data['amountCurrency']=$jDecodedData['order']['mispaid_native']['currency_iso'];
 
 
-		}else if($status=="completed" || $status=="mispaid" || $status=="expired"){
-			$data['amountCents']=$jDecodedData['order']['total_native']['cents'];
-			$data['amountCurrency']=$jDecodedData['order']['total_native']['currency_iso'];
-		}
-		$data['userId']=$jDecodedData['order']['metadata']['customer_id'];
-		$data['status']=$jDecodedData['order']['status'];
-		$data['orderId']=$jDecodedData['order']['id'];
+		}else*/
 
-		if(($status=="completed" || $status=="mispaid" || $status=="expired" ) && $data['amountCurrency']=="USD"){
+        if($status=="CONFIRMED" ){
+
+			$data['amountCents']=$jDecodedData['event']['data']['payments'][0]['value']['local']['amount']*100;
+			$data['amountCurrency']=$jDecodedData['event']['data']['payments'][0]['value']['local']['currency'];
+		}
+		$data['userId']=$jDecodedData['event']['data']['metadata']['customer_id'];
+		$data['status']=$status;
+		$data['orderId']=$jDecodedData['event']['data']['payments'][0]['transaction_id'];
+
+		if($status=="CONFIRMED"  && $data['amountCurrency']=="USD"){
 			$param[':userId']=$data['userId'];
 			$param[':balance']=$data['amountCents'];
 
