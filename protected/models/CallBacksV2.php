@@ -257,7 +257,12 @@ class CallBacksV2 extends CFormModel
 
 		$jDecodedData=json_decode($jEncodedData,true);
 
-		$status=$jDecodedData['event']['data']['payments'][0]['status'];
+        if(isset($jDecodedData['event']['data']['payments'][0])){
+            $status=$jDecodedData['event']['data']['payments'][0]['status'];
+        }else{
+            $status=$jDecodedData['event']['data']['timeline'][0]['status'];
+        }
+
 
 		//mispaid
 		//completed
@@ -276,10 +281,12 @@ class CallBacksV2 extends CFormModel
 
 			$data['amountCents']=$jDecodedData['event']['data']['payments'][0]['value']['local']['amount']*100;
 			$data['amountCurrency']=$jDecodedData['event']['data']['payments'][0]['value']['local']['currency'];
-		}
-		$data['userId']=$jDecodedData['event']['data']['metadata']['customer_id'];
-		$data['status']=$status;
-		$data['orderId']=$jDecodedData['event']['data']['payments'][0]['transaction_id'];
+
+            $data['userId']=$jDecodedData['event']['data']['metadata']['customer_id'];
+            $data['status']=$status;
+            $data['orderId']=$jDecodedData['event']['data']['payments'][0]['transaction_id'];
+        }
+
 
 		if($status=="CONFIRMED"  && $data['amountCurrency']=="USD"){
 			$param[':userId']=$data['userId'];
