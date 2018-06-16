@@ -177,13 +177,14 @@ class GetNewSeedV2 extends CFormModel
 		$userId=Yii::app()->user->getId();
 
 		$currentData=Yii::app()->mongo->findById('user',$userId,array('balance'=>1,'pastDue'=>1,'lastIdChecked'=>1));
-
+/*
 		if($currentData['pastDue']===2){
 
 			$result['response']='fail';
 			$result['data']='pastDue';
 
-		}else if($emails1=json_decode($this->emailHashes,true)){
+		}else */
+            if($emails1=json_decode($this->emailHashes,true)){
 
 			if(isset($emails1['v2'])){
 				foreach($emails1['v2'] as $i=> $hash)
