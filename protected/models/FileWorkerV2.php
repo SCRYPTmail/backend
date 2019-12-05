@@ -235,6 +235,8 @@ class FileWorkerV2 extends CFormModel
                     }else{
                         if(FileWV2::ifExt('del_'.$fileName)!='not found'){
                             $fnamed='del_'.$fileName;
+                        }else{
+                            $fnamed=$fileName;
                         }
                     }
 
