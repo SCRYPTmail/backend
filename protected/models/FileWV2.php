@@ -6,386 +6,313 @@
  * Time: 3:28 PM
  */
 
-class CallBacksV2 extends CFormModel
+class FileWV2 extends CFormModel
 {
 
-	public $email;
+	public $file,$fileName,$fileId,$destId;
+
 
 	public function rules()
 	{
 		return array(
-			//array('userToken', 'chkToken'),
+			// deleteEmailUnreg
+			//array('messageId', 'match', 'pattern' => "/^[a-zA-Z0-9\d]+$/i", 'allowEmpty' => false, 'on' => 'deleteEmailUnreg','message'=>'fld2upd'),
+			//array('messageId','length', 'max'=>128,'allowEmpty' => false,'on'=>'deleteEmailUnreg','message'=>'fld2upd'),
+
+			//array('modKey', 'match', 'pattern' => "/^[a-z0-9\d]{32,64}$/i", 'allowEmpty' => false, 'on' => 'deleteEmailUnreg','message'=>'fld2upd'),
+
+			//	array('mailHash', 'numerical','integerOnly'=>true,'allowEmpty'=>true),
 		);
 	}
 
+    public function getToken()
+    {
 
-	public function paypal()
-	{
-		/* test callback
-		$jEncodedData=file_get_contents('php://input');
-		$myfile = fopen("test.txt", "w") or die("Unable to open file!");
-		fwrite($myfile,json_encode($jEncodedData));
-		fclose($myfile);
-				echo 'ok';
-		Yii::app()->end();
-		*/
+        $xmlpost  = array(
+            'apikey'=> Yii::app()->params['apikey'],
+            'response_type'=>'cloud_iam',
+            'grant_type'=>'urn:ibm:params:oauth:grant-type:apikey'
+        );
+
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, Yii::app()->params['softToken']);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, array('Content-Type: application/x-www-form-urlencoded','Accept:application/json',
+        ));
+        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'POST');
+        curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($xmlpost));
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        $response  = curl_exec($ch);
+        $fd=json_decode($response);
+        return $fd->access_token;
+        curl_close($ch);
+
+    }
+
+    public function makeCopyWithMeta($fileId,$destId)
+    {
+
+        $token=FileWV2::getToken();
+        $heads[]=('Content-type: application/octet-stream');
+        $heads[]=('x-amz-copy-source: '.'/'.Yii::app()->params['folder'].'/'.$fileId);
+
+        if(isset($token)){
+
+            $headers = array();
+            $headers[] = 'Authorization: Bearer '.$token;
+            $h=array_merge($headers,$heads);
+
+            $ch = curl_init();
+            curl_setopt($ch, CURLOPT_URL, Yii::app()->params['host'].'/'.Yii::app()->params['folder'].'/'.$destId);
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+            curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'PUT');
+
+            curl_setopt($ch, CURLOPT_HTTPHEADER, $h);
 
 
+            $result = curl_exec($ch);
 
-		//todo input for live
-		if (Yii::app()->params['production']) {
-			$jEncodedData=file_get_contents('php://input');
-
-            $ch = curl_init('https://www.paypal.com/cgi-bin/webscr');
-            curl_setopt($ch, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_1);
-            curl_setopt($ch, CURLOPT_POST, 1);
-            curl_setopt($ch, CURLOPT_RETURNTRANSFER,1);
-            curl_setopt($ch, CURLOPT_POSTFIELDS, "cmd=_notify-validate&".$jEncodedData);
-            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, 1);
-            curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 2);
-            curl_setopt($ch, CURLOPT_FORBID_REUSE, 1);
-            curl_setopt($ch, CURLOPT_HTTPHEADER, array('Connection: Close'));
-
-            $verify = curl_exec($ch);
-            curl_close($ch);
-
-            parse_str($jEncodedData, $jDecodedData);
-		}else{
-			//$jEncodedData=file_get_contents('callBackPaypConfirmed.txt');
-			$jEncodedData=file_get_contents('callBackPaypChargeBackRefunded.txt');
-            $verify="verified";
-
-		}
-
-
-
-
-		//print_r($jDecodedData);
-		if(strtolower($verify)==="verified"){
-			//print_r($jDecodedData);
-
-            if(isset($jDecodedData['payment_status'])){
-                $status=$jDecodedData['payment_status'];
+            if (curl_errno($ch)) {
+                curl_close($ch);
+                return false;
             }else{
-                $myfile = fopen("paypal_error.txt", "a") or die("Unable to open file!");
-                fwrite($myfile,json_encode($jEncodedData));
-                fwrite($myfile,"
-                ");
-                fclose($myfile);
-                echo 'ok';
-                Yii::app()->end();
-            }
-
-
-            if(isset($jDecodedData['item_number']))
-            {
-                $type=$jDecodedData['item_number'];
-            }
-
-			//print_r($status);
-
-			$data['amountCents']=$jDecodedData['mc_gross']*100;
-			$data['amountCurrency']=$jDecodedData['mc_currency'];
-
-			$data['userId']=$jDecodedData['custom'];
-			$data['status']=$jDecodedData['payment_status'];
-
-			if($status=="Completed"){
-				$data['orderId']=$jDecodedData['txn_id'];
-			}else if($status=="Refunded"){
-				$data['orderId']=$jDecodedData['parent_txn_id'];
-			}else if($status=="Failed"){
-				$data['orderId']=$jDecodedData['txn_id'];
-			}else if($status=="Reversed") {
-                $data['orderId'] = $jDecodedData['parent_txn_id'];
-            }else if($status=="Denied") {
-                $data['orderId'] = $jDecodedData['txn_id'];
+                curl_close($ch);
+                return true;
             }
 
 
 
-			if($status=="Completed" && $data['amountCurrency']=="USD" && strlen($data['userId'])==24){
-				$param[':userId']=$data['userId'];
-				$param[':balance']=$data['amountCents'];
-
-				$params[':orderId']=$data['orderId'];
-
-				if(!Yii::app()->db->createCommand("SELECT orderId FROM userPaymentHistory WHERE orderId=:orderId")->queryRow(true, $params)){
-
-					$currentData=Yii::app()->mongo->findById('user',$data['userId'],array('balance'=>1,'pastDue'=>1,'alrdPaid'=>1));
-
-					$alrdPaid=$currentData['alrdPaid'];
-
-					if($currentData['balance']<0 && $data['amountCents']+$currentData['balance']>0){
-						$alrdPaid=$currentData['alrdPaid']-$currentData['balance'];
-					}else if($currentData['balance']<0 && $data['amountCents']+$currentData['balance']<0){
-						$alrdPaid=$currentData['alrdPaid']+$data['amountCents'];
-					}
-
-					if($currentData['balance']>=0 || $data['amountCents']+$currentData['balance']>=0){
-						$pastDue=0;
-					}else{
-						$pastDue=1;
-					}
-
-
-					$userObj=array(
-						"planUpdatedAt"=>new MongoDate(strtotime('now')),
-						"pastDue"=>$pastDue,
-						"alrdPaid"=>$alrdPaid
-					);
-					$incremental=array(
-						"balance"=>$data['amountCents']
-					);
-
-					$criteria=array("_id" => new MongoId($data['userId']));
-
-					Yii::app()->mongo->update('user', $userObj, $criteria,$incremental);
-
-					$histData['type']="1";
-					$histData['description']='Load Funds';
-					$histData['amount']=$data['amountCents'];
-					$histData['author']=3;
-					$histData['orderId']=$data['orderId'];
-					$histData['callbackData']=json_encode($jDecodedData);
-
-					$stats=new StatsV2;
-					$stats->counter('paymentPayPalRcvd',$data['amountCents']);
-
-					PlansWorkerV2::savePlanHistory($data['userId'],$histData);
-
-				}else{
-
-					$histData['type']="3";
-					$histData['description']="Order Exist in System";
-					$histData['amount']=$data['amountCents'];
-					$histData['author']=3;
-					$histData['orderId']=$data['orderId'];
-					$histData['callbackData']=json_encode($jDecodedData);;
-
-					PlansWorkerV2::savePlanHistory($data['userId'],$histData);
-				}
-
-			}else if($status=="Refunded" && $data['amountCurrency']=="USD" && strlen($data['userId'])==24){
-
-				$param[':userId']=$data['userId'];
-				$param[':balance']=$data['amountCents'];
-
-				$params[':orderId']=$data['orderId'];
-
-				if(!Yii::app()->db->createCommand("SELECT orderId FROM userPaymentHistory WHERE orderId=:orderId AND description='Refund Order'")->queryRow(true, $params)){
-
-					$currentData=Yii::app()->mongo->findById('user',$data['userId'],array('balance'=>1,'pastDue'=>1,'alrdPaid'=>1));
-
-					$left=$currentData['balance']+$data['amountCents'];
-
-					if($left<0){
-						$pastDue=1;
-						$alrdPaid=$currentData['alrdPaid']+$left;
-					}else{
-						$pastDue=0;
-						$alrdPaid=$currentData['alrdPaid'];
-					}
-
-					$userObj=array(
-						"planUpdatedAt"=>new MongoDate(strtotime('now')),
-						"pastDue"=>$pastDue,
-						"alrdPaid"=>$alrdPaid
-					);
-					$incremental=array(
-						"balance"=>$data['amountCents']
-					);
-
-					$criteria=array("_id" => new MongoId($data['userId']));
-
-
-					Yii::app()->mongo->update('user', $userObj, $criteria,$incremental);
-					//Yii::app()->end();
-
-					//Yii::app()->db->createCommand("UPDATE userFeatures SET balance=balance+:balance,updated=NOW() WHERE userId=:userId")->execute($param);
-
-					$histData['type']="5";
-					$histData['description']='Refund Order';
-					$histData['amount']=$data['amountCents'];
-					$histData['author']=3;
-					$histData['orderId']=$data['orderId'];
-					$histData['callbackData']=json_encode($jDecodedData);
-
-					PlansWorkerV2::savePlanHistory($data['userId'],$histData);
-
-					$stats=new StatsV2;
-					$stats->counter('paymentPayPalRefunded',$data['amountCents']);
-
-				}else{
-
-					$histData['type']="3";
-					$histData['description']="Refund already processed";
-					$histData['amount']=$data['amountCents'];
-					$histData['author']=3;
-					$histData['orderId']=$data['orderId'];
-					$histData['callbackData']=json_encode($jDecodedData);;
-
-					PlansWorkerV2::savePlanHistory($data['userId'],$histData);
-				}
-
-			}else if($status!="Canceled_Reversal" && strtolower($type)!=="donation" && $type!="Please consider donating at least $0.3 to cover PayPal processing fees"){
-
-				$histData['type']="4";
-				$histData['description']="Order mispaid,expired or wrong currency";
-				$histData['amount']=$data['amountCents'];
-				$histData['author']=3;
-				$histData['orderId']=$data['orderId'];
-				$histData['callbackData']=json_encode($jDecodedData);;
-
-				PlansWorkerV2::savePlanHistory($data['userId'],$histData);
-			}
-
-		}
-
-	}
-	public function bitcoin($userId)
-	{
-/*
-		$jEncodedData=file_get_contents('php://input');
-
-		$current=$data;
-
-		$myfile = fopen("callback.txt", "w") or die("Unable to open file!");
-
-		fwrite($myfile,json_encode($current));
-
-//fwrite($myfile, $txt);
-		fclose($myfile);
-
-		echo 'ok';
-		*/
-		if (Yii::app()->params['production']) {
-			$jEncodedData=file_get_contents('php://input');
-		}else{
-			$jEncodedData=file_get_contents('callb');
-		}
-
-		//$jEncodedData=file_get_contents('/work/scryptmail/callbackMiss.txt');
-		//$jEncodedData=file_get_contents('/work/scryptmail/callBackExp.txt');
-		//
-
-
-		$jDecodedData=json_decode($jEncodedData,true);
-
-        if(isset($jDecodedData['event']['data']['payments'][0])){
-            $status=$jDecodedData['event']['data']['payments'][0]['status'];
         }else{
-            $status=$jDecodedData['event']['data']['timeline'][0]['status'];
+            return false;
+        }
+
+    }
+    public function saveFile($fileId,$file,$expire=null)
+    {
+        $heads[]=('Content-type: application/octet-stream');
+        $token=FileWV2::getToken();
+
+        if(isset($token)){
+
+            $headers = array();
+            $headers[] = 'Authorization: Bearer '.$token;
+            $h=array_merge($headers,$heads);
+
+            $ch = curl_init();
+            curl_setopt($ch, CURLOPT_URL, Yii::app()->params['host'].'/'.Yii::app()->params['folder'].'/'.$fileId);
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+            curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'PUT');
+
+            curl_setopt($ch, CURLOPT_HTTPHEADER, $h);
+            curl_setopt($ch, CURLOPT_POSTFIELDS, $file);
+
+            $result = curl_exec($ch);
+
+            if (curl_errno($ch)) {
+                curl_close($ch);
+               return false;
+            }else{
+                curl_close($ch);
+                return true;
+            }
+
+
+
+        }else{
+            return false;
         }
 
 
-		//mispaid
-		//completed
-		//expired
+    }
+    public function deleteFile($fileId)
+    {
+        $token=FileWV2::getToken();
+
+        if(isset($token)){
+
+            $headers = array();
+            $headers[] = 'Authorization: Bearer '.$token;
 
 
-/*		if($status=="mispaid" || $status=="expired"){
+            $ch = curl_init();
+            curl_setopt($ch, CURLOPT_URL, Yii::app()->params['host'].'/'.Yii::app()->params['folder'].'/'.$fileId);
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+            curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'DELETE');
 
-			$data['amountCents']=$jDecodedData['order']['mispaid_native']['cents'];
-			$data['amountCurrency']=$jDecodedData['order']['mispaid_native']['currency_iso'];
+            curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+
+            $result = curl_exec($ch);
+
+            if (curl_errno($ch)) {
+                curl_close($ch);
+                //return false;
+            }else{
+                curl_close($ch);
+               // return true;
+            }
+
+           // Yii::app()->end();
+            return 1;
+        }
+    }
+    public function ifExt($fileId)
+    {
+        $token=FileWV2::getToken();
+
+        if(isset($token)){
+
+            $headers = array();
+            $headers[] = 'Authorization: Bearer '.$token;
 
 
-		}else*/
+            $ch = curl_init();
+            curl_setopt($ch, CURLOPT_URL, Yii::app()->params['host'].'/'.Yii::app()->params['folder'].'/'.$fileId);
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+            curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'HEAD');
+            curl_setopt($ch, CURLOPT_NOBODY, true);
+            curl_setopt($ch, CURLOPT_HEADER, 1);
 
-        if($status=="CONFIRMED" ){
+            curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
 
-			$data['amountCents']=$jDecodedData['event']['data']['payments'][0]['value']['local']['amount']*100;
-			$data['amountCurrency']=$jDecodedData['event']['data']['payments'][0]['value']['local']['currency'];
+            $res = curl_exec($ch);
 
-            $data['userId']=$jDecodedData['event']['data']['metadata']['customer_id'];
-            $data['status']=$status;
-            $data['orderId']=$jDecodedData['event']['data']['payments'][0]['transaction_id'];
+            $header_size = curl_getinfo($ch, CURLINFO_HEADER_SIZE);
+
+            $header = substr($res, 0, $header_size);
+
+            foreach (explode("\r\n", $header) as $i => $line)
+                if ($i === 0)
+                    $resul['headers']['http_code'] = $line;
+                else
+                {
+                    list ($key, $value) = explode(': ', $line);
+                    $resul['headers'][$key] = $value;
+                }
+
+            if ($resul['headers']["http_code"] !== 'HTTP/1.1 200 OK') {
+                $result="not found" ;
+            }else{
+                $result = "found";
+            }
+
+            if (curl_errno($ch)) {
+                curl_close($ch);
+                //return false;
+            }else{
+                curl_close($ch);
+                // return true;
+            }
+            return $result;
         }
 
+    }
 
-		if($status=="CONFIRMED"  && $data['amountCurrency']=="USD"){
-			$param[':userId']=$data['userId'];
-			$param[':balance']=$data['amountCents'];
+    public function getSize($fileId)
+    {
+        $token=FileWV2::getToken();
 
-			$params[':orderId']=$data['orderId'];
+        if(isset($token)){
+            if(FileWV2::ifExt($fileId)!=='not found'){
 
-			if(!Yii::app()->db->createCommand("SELECT orderId FROM userPaymentHistory WHERE orderId=:orderId")->queryRow(true, $params)){
+                $fnamed=$fileId;
 
-
-				$currentData=Yii::app()->mongo->findById('user',$data['userId'],array('balance'=>1,'pastDue'=>1,'alrdPaid'=>1));
-
-				$alrdPaid=$currentData['alrdPaid'];
-
-				if($currentData['balance']<0 && $data['amountCents']+$currentData['balance']>0){
-					$alrdPaid=$currentData['alrdPaid']-$currentData['balance'];
-
-				}else if($currentData['balance']<0 && $data['amountCents']+$currentData['balance']<0){
-					$alrdPaid=$currentData['alrdPaid']+$data['amountCents'];
-				}
-
-				if($currentData['balance']>=0 || $data['amountCents']+$currentData['balance']>=0){
-					$pastDue=0;
-				}else{
-					$pastDue=1;
-				}
-
-				$userObj=array(
-					"planUpdatedAt"=>new MongoDate(strtotime('now')),
-					"pastDue"=>$pastDue,
-					"alrdPaid"=>$alrdPaid
-				);
-				$incremental=array(
-					"balance"=>$data['amountCents']
-				);
-
-				$criteria=array("_id" => new MongoId($data['userId']));
+            }else{
+                if(FileWV2::ifExt('del_'.$fileId)!='not found'){
+                    $fnamed='del_'.$fileId;
+                }
+            }
 
 
-				Yii::app()->mongo->update('user', $userObj, $criteria,$incremental);
+            $headers = array();
+            $headers[] = 'Authorization: Bearer '.$token;
 
 
-				$histData['type']="1";
-				$histData['description']='Load Funds';
-				$histData['amount']=$data['amountCents'];
-				$histData['author']=3;
-				$histData['orderId']=$data['orderId'];
-				$histData['callbackData']=$jEncodedData;
+            $ch = curl_init();
+            curl_setopt($ch, CURLOPT_URL, Yii::app()->params['host'].'/'.Yii::app()->params['folder'].'/'.$fnamed);
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+            curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'HEAD');
+            curl_setopt($ch, CURLOPT_NOBODY, true);
+            curl_setopt($ch, CURLOPT_HEADER, 1);
+
+            curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+
+            $res = curl_exec($ch);
+
+            $header_size = curl_getinfo($ch, CURLINFO_HEADER_SIZE);
+
+            $header = substr($res, 0, $header_size);
+
+            foreach (explode("\r\n", $header) as $i => $line)
+                if ($i === 0)
+                    $resul['headers']['http_code'] = $line;
+                else
+                {
+                    list ($key, $value) = explode(': ', $line);
+                    $resul['headers'][$key] = $value;
+                }
 
 
-				PlansWorkerV2::savePlanHistory($data['userId'],$histData);
+            if (curl_errno($ch)) {
+                curl_close($ch);
+                //return false;
+            }else{
+                curl_close($ch);
+                // return true;
+            }
+            return $resul['headers']['Content-Length'];
+        }
 
-				$stats=new StatsV2;
-				$stats->counter('paymentBitcoinRcvd',$data['amountCents']);
+    }
 
-			}else{
+	public function readFile($fileId)
+	{
+        $token=FileWV2::getToken();
+
+        if(isset($token)){
+
+            $headers = array();
+            $headers[] = 'Authorization: Bearer '.$token;
 
 
-				$histData['type']="3";
-				$histData['description']="Order Exist in System";
-				$histData['amount']=$data['amountCents'];
-				$histData['author']=3;
-				$histData['orderId']=$data['orderId'];
-				$histData['callbackData']=$jEncodedData;
+            $ch = curl_init();
+            curl_setopt($ch, CURLOPT_URL, Yii::app()->params['host'].'/'.Yii::app()->params['folder'].'/'.$fileId);
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+            curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'GET');
+            curl_setopt($ch, CURLOPT_VERBOSE, 1);
+            curl_setopt($ch, CURLOPT_HEADER, 1);
 
-				PlansWorkerV2::savePlanHistory($data['userId'],$histData);
-			}
+            curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
 
-		}else if(isset($data['amountCents'])){
+            $res = curl_exec($ch);
 
-			$histData['type']="4";
-			$histData['description']="Order mispaid,expired or wrong currency";
-			$histData['amount']=$data['amountCents'];
-			$histData['author']=3;
-			$histData['orderId']=$data['orderId'];
-			$histData['callbackData']=$jEncodedData;
+            $header_size = curl_getinfo($ch, CURLINFO_HEADER_SIZE);
 
-			PlansWorkerV2::savePlanHistory($data['userId'],$histData);
-		}
-		//print_r($jDecodedData);
-		//print_r($data);
+            $header = substr($res, 0, $header_size);
+
+            foreach (explode("\r\n", $header) as $i => $line)
+                if ($i === 0)
+                    $resul['headers']['http_code'] = $line;
+                else
+                {
+                    list ($key, $value) = explode(': ', $line);
+                    $resul['headers'][$key] = $value;
+                }
+
+            if ($resul['headers']['Content-Type'] === 'application/xml') {
+                $result="not found" ;
+            }else{
+                $result = substr($res, $header_size);
+            }
+
+
+            if (curl_errno($ch)) {
+                curl_close($ch);
+                //return false;
+            }else{
+                curl_close($ch);
+                // return true;
+            }
+            return $result;
+        }
+
 	}
-
-
-
-
 }
