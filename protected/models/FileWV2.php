@@ -184,8 +184,11 @@ class FileWV2 extends CFormModel
                     $resul['headers']['http_code'] = $line;
                 else
                 {
-                    list ($key, $value) = explode(': ', $line);
-                    $resul['headers'][$key] = $value;
+                    $zz=explode(': ', $line);
+                    if(isset($zz[1])){
+                        list ($key, $value) = explode(': ', $line);
+                        $resul['headers'][$key] = $value;
+                    }
                 }
 
             if ($resul['headers']["http_code"] !== 'HTTP/1.1 200 OK') {
@@ -246,8 +249,11 @@ class FileWV2 extends CFormModel
                     $resul['headers']['http_code'] = $line;
                 else
                 {
-                    list ($key, $value) = explode(': ', $line);
-                    $resul['headers'][$key] = $value;
+                    $zz=explode(': ', $line);
+                    if(isset($zz[1])){
+                        list ($key, $value) = explode(': ', $line);
+                        $resul['headers'][$key] = $value;
+                    }
                 }
 
 
@@ -269,48 +275,69 @@ class FileWV2 extends CFormModel
 
         if(isset($token)){
 
-            $headers = array();
-            $headers[] = 'Authorization: Bearer '.$token;
+            if(FileWV2::ifExt($fileId)!=='not found'){
+
+                $fnamed=$fileId;
+
+            }else{
+                if(FileWV2::ifExt('del_'.$fileId)!='not found'){
+                    $fnamed='del_'.$fileId;
+                }else{
+                    $fnamed=$fileId;
+                }
+            }
+            if(FileWV2::ifExt($fnamed)!='not found'){
+
+                $headers = array();
+                $headers[] = 'Authorization: Bearer '.$token;
 
 
-            $ch = curl_init();
-            curl_setopt($ch, CURLOPT_URL, Yii::app()->params['host'].'/'.Yii::app()->params['folder'].'/'.$fileId);
-            curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-            curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'GET');
-            curl_setopt($ch, CURLOPT_VERBOSE, 1);
-            curl_setopt($ch, CURLOPT_HEADER, 1);
+                $ch = curl_init();
+                curl_setopt($ch, CURLOPT_URL, Yii::app()->params['host'].'/'.Yii::app()->params['folder'].'/'.$fnamed);
+                curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+                curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'GET');
+                curl_setopt($ch, CURLOPT_VERBOSE, 1);
+                curl_setopt($ch, CURLOPT_HEADER, 1);
 
-            curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+                curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
 
-            $res = curl_exec($ch);
+                $res = curl_exec($ch);
 
-            $header_size = curl_getinfo($ch, CURLINFO_HEADER_SIZE);
+                $header_size = curl_getinfo($ch, CURLINFO_HEADER_SIZE);
 
-            $header = substr($res, 0, $header_size);
+                $header = substr($res, 0, $header_size);
 
-            foreach (explode("\r\n", $header) as $i => $line)
-                if ($i === 0)
-                    $resul['headers']['http_code'] = $line;
-                else
-                {
-                    list ($key, $value) = explode(': ', $line);
-                    $resul['headers'][$key] = $value;
+                foreach (explode("\r\n", $header) as $i => $line) {
+                    if ($i === 0)
+                        $resul['headers']['http_code'] = $line;
+                    else {
+                        $zz=explode(': ', $line);
+                        if(isset($zz[1])){
+                            list ($key, $value) = explode(': ', $line);
+                            $resul['headers'][$key] = $value;
+                        }
+                    }
                 }
 
-            if ($resul['headers']['Content-Type'] === 'application/xml') {
+                if ($resul['headers']['Content-Type'] === 'application/xml') {
+                    $result="not found" ;
+                }else{
+                    $result = substr($res, $header_size);
+                }
+
+                if (curl_errno($ch)) {
+                    curl_close($ch);
+                    //return false;
+                }else{
+                    curl_close($ch);
+                    // return true;
+                }
+
+            }else{
                 $result="not found" ;
-            }else{
-                $result = substr($res, $header_size);
             }
 
 
-            if (curl_errno($ch)) {
-                curl_close($ch);
-                //return false;
-            }else{
-                curl_close($ch);
-                // return true;
-            }
             return $result;
         }
 
