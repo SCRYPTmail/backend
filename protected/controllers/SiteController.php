@@ -259,12 +259,12 @@ class SiteController extends Controller
 
 	public function actionCreateNewUserV2()
 	{
-		$model = new ResetAccountV2('createNewUser');
+		/*$model = new ResetAccountV2('createNewUser');
 		$model->attributes = $_POST;
 		if ($model->validate()){
 			$model->createNewUser();
 		}else
-			echo json_encode($model->getErrors());
+			echo json_encode($model->getErrors());*/
 	}
 
 	public function actionResetUserV2()

@@ -35,32 +35,47 @@ class CallBacksV2 extends CFormModel
 		//todo input for live
 		if (Yii::app()->params['production']) {
 			$jEncodedData=file_get_contents('php://input');
+
+            $ch = curl_init('https://www.paypal.com/cgi-bin/webscr');
+            curl_setopt($ch, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_1);
+            curl_setopt($ch, CURLOPT_POST, 1);
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER,1);
+            curl_setopt($ch, CURLOPT_POSTFIELDS, "cmd=_notify-validate&".$jEncodedData);
+            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, 1);
+            curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 2);
+            curl_setopt($ch, CURLOPT_FORBID_REUSE, 1);
+            curl_setopt($ch, CURLOPT_HTTPHEADER, array('Connection: Close'));
+
+            $verify = curl_exec($ch);
+            curl_close($ch);
+
+            parse_str($jEncodedData, $jDecodedData);
 		}else{
 			//$jEncodedData=file_get_contents('callBackPaypConfirmed.txt');
 			$jEncodedData=file_get_contents('callBackPaypChargeBackRefunded.txt');
+            $verify="verified";
+
 		}
 
 
 
-		$ch = curl_init('https://www.paypal.com/cgi-bin/webscr');
-		curl_setopt($ch, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_1);
-		curl_setopt($ch, CURLOPT_POST, 1);
-		curl_setopt($ch, CURLOPT_RETURNTRANSFER,1);
-		curl_setopt($ch, CURLOPT_POSTFIELDS, "cmd=_notify-validate&".$jEncodedData);
-		curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, 1);
-		curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 2);
-		curl_setopt($ch, CURLOPT_FORBID_REUSE, 1);
-		curl_setopt($ch, CURLOPT_HTTPHEADER, array('Connection: Close'));
 
-		$verify = curl_exec($ch);
-		curl_close($ch);
-
-		parse_str($jEncodedData, $jDecodedData);
 		//print_r($jDecodedData);
 		if(strtolower($verify)==="verified"){
 			//print_r($jDecodedData);
 
-			$status=$jDecodedData['payment_status'];
+            if(isset($jDecodedData['payment_status'])){
+                $status=$jDecodedData['payment_status'];
+            }else{
+                $myfile = fopen("paypal_error.txt", "a") or die("Unable to open file!");
+                fwrite($myfile,json_encode($jEncodedData));
+                fwrite($myfile,"
+                ");
+                fclose($myfile);
+                echo 'ok';
+                Yii::app()->end();
+            }
+
 
             if(isset($jDecodedData['item_number']))
             {

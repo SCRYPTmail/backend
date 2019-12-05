@@ -47,7 +47,7 @@ class FileWorkerV2 extends CFormModel
 
 
 		//downloadFilePublic
-		array('fileId', 'match', 'pattern' => "/^[a-z0-9\d]{25}$/i", 'allowEmpty' => true, 'on' => 'downloadFilePublic','message'=>'fld2upd'),
+		array('fileId', 'match', 'pattern' => "/^[a-z0-9_\d]{25,29}$/i", 'allowEmpty' => true, 'on' => 'downloadFilePublic','message'=>'fld2upd1'),
 		array('filePass', 'match', 'pattern' => "/^[a-z0-9\d]{64}$/i", 'allowEmpty' => false, 'on' => 'downloadFilePublic','message'=>'fld2upd'),
 
 		);
@@ -87,21 +87,18 @@ class FileWorkerV2 extends CFormModel
 	{
 		$result['response']='fail';
 
-		$options = array('adapter' => ObjectStorage_Http_Client::SOCKET, 'timeout' => 10);
-		$host = Yii::app()->params['host'];
-		$folder=Yii::app()->params['folder'];
-		$username = Yii::app()->params['username'];
-		$password = Yii::app()->params['password'];
+		$mngData=array('pgpFileName'=>str_replace("del_", "", $this->fileId),'public'=>true);
 
-		$mngData=array('pgpFileName'=>$this->fileId,'public'=>true);
-
-		$objectStorage = new ObjectStorage($host, $username, $password, $options);
 
 		if($file=Yii::app()->mongo->findOne('fileToObj',$mngData)) {
-			//print_r($file['_id']);
-			$res = $objectStorage->with($folder . '/' . $file['_id'])->get();
-			if ($res != 'not found') {
-				$data = $res->getBody();
+
+            $res=FileWV2::readFile('del_'.$file['_id']);
+            if($res=="not found"){
+                $res=FileWV2::readFile($file['_id']);
+            }
+
+			if ($res !== 'not found') {
+				$data = $res;
 				$fileBroken = explode(';', $data);
 				$iv = base64_decode($fileBroken[0]);
 				$encrypted = $fileBroken[1];
@@ -117,16 +114,18 @@ class FileWorkerV2 extends CFormModel
 				$fileN = explode(';', $file['name']);
 				$fileName = openssl_decrypt($fileN[1], $encryptionMethod, $key, 0, base64_decode($fileN[0]));
 
-				//print_r(base64_decode($fileType));
-
 				header("Cache-Control: public");
 				header("Content-Description: File Transfer");
 				header("Content-Disposition: attachment; filename=" . base64_decode($fileName));
 				header("Content-Type: ".base64_decode($fileType));
 				header("Content-Type: application/octet-stream");
 				echo base64_decode($g);
-			}
-		}
+			}else{
+                print_r('No File Found');
+            }
+		}else{
+            print_r('No File Found');
+        }
 
 	}
 
@@ -161,31 +160,25 @@ class FileWorkerV2 extends CFormModel
 	{
 		$result['response']='fail';
 
-		$options = array('adapter' => ObjectStorage_Http_Client::SOCKET, 'timeout' => 10);
-		$host = Yii::app()->params['host'];
-		$folder=Yii::app()->params['folder'];
-		$username = Yii::app()->params['username'];
-		$password = Yii::app()->params['password'];
-
 
 		if($this->version==="15"){
 			$fOname=$this->fileName;
-			$objectStorage = new ObjectStorage($host, $username, $password, $options);
+            $res=FileWV2::readFile($fOname);
 
-			$res = $objectStorage->with($folder.'/'.$fOname)->get();
 			if($res!='not found'){
 				$result['response']='success';
-				$result['data']=$res->getBody();
+				$result['data']=$res;
 			}
 		}else if($this->version==="1"){
 			$fOname=hash('sha512',$this->fileName);
-			$objectStorage = new ObjectStorage($host, $username, $password, $options);
 
-			$res = $objectStorage->with($folder.'/'.$fOname)->get();
+
+            $res=FileWV2::readFile($fOname);
+
 			if($res!='not found'){
 				$result['response']='success';
 
-				$data = $res->getBody();
+				$data = $res;
 				$iv = hex2bin(substr($data, 0, 32));
 				$encrypted = substr($data, 32);
 
@@ -193,14 +186,13 @@ class FileWorkerV2 extends CFormModel
 			}
 		}else if($this->version==="2"){
 			$mngData=array('pgpFileName'=>hash('sha256',$this->fileName.$userId),'modKey'=>hash('sha256', $this->modKey.$userId));
-			$objectStorage = new ObjectStorage($host, $username, $password, $options);
 
             if($file=Yii::app()->mongo->findOne('fileToObj',$mngData)){
-                $res = $objectStorage->with($folder.'/'.$file['pgpFileName'])->get();
+                $res=FileWV2::readFile($file['pgpFileName']);
 
                 if($res!='not found'){
                     $result['response']='success';
-                    $result['data']=$res->getBody();
+                    $result['data']=$res;
                 }
 
             }
@@ -229,15 +221,6 @@ class FileWorkerV2 extends CFormModel
 
 		if(is_array($fileObject)){
 
-			$options = array('adapter' => ObjectStorage_Http_Client::SOCKET, 'timeout' => 10);
-			$host = Yii::app()->params['host'];
-			$folder=Yii::app()->params['folder'];
-			$username = Yii::app()->params['username'];
-			$password = Yii::app()->params['password'];
-
-			$objectStorage = new ObjectStorage($host, $username, $password, $options);
-
-
 			foreach($fileObject as $fileName=>$modKey){
 
 				$mngData=array('pgpFileName'=>$fileName,'modKey'=>hash('sha256', $modKey));
@@ -245,12 +228,17 @@ class FileWorkerV2 extends CFormModel
 
 				if($ref=Yii::app()->mongo->findOne('fileToObj',$mngData)) {
 
+                    if(FileWV2::ifExt($fileName)!=='not found'){
 
-					//if ($ref[0]['modKey'] === hash('sha256', $modKey)) {
+                        $fnamed=$fileName;
 
-						$object = $objectStorage->with($folder.'/'.$fileName)->get();
+                    }else{
+                        if(FileWV2::ifExt('del_'.$fileName)!='not found'){
+                            $fnamed='del_'.$fileName;
+                        }
+                    }
 
-						if($object!='not found'){
+						if(FileWV2::ifExt($fnamed)!='not found'){
 
 							$fileN=hash('sha256',$fileName.$userId);
 							$fileMod=hash('sha256',$modKey.$userId);
@@ -267,19 +255,12 @@ class FileWorkerV2 extends CFormModel
 							if($message=Yii::app()->mongo->insert('fileToObj',$file))
 							{
 								try{
-									if($expireAfter===null){
-										$objectStorage->with($folder.'/'.$fileN)
-											->setBody($object->getBody())
-											->setHeader('Content-type', 'application/octet-stream')
-											->create();
-									}else{
-										$objectStorage->with($folder.'/'.$fileN)
-											->setBody($object->getBody())
-											->setHeader('Content-type', 'application/octet-stream')
-											->deleteAt($expireAfter)
-											->create();
-									}
+                                    if($expireAfter===null){
+                                        FileWV2::makeCopyWithMeta($fnamed,$fileN);
 
+                                    }else {
+                                        FileWV2::makeCopyWithMeta($fnamed, 'del_' . $fileN);
+                                    }
 									$result[]=$fileN;
 
 								} catch (Exception $e) {
@@ -322,13 +303,6 @@ class FileWorkerV2 extends CFormModel
 		}
 		if(is_array($fileObject)){
 
-			$options = array('adapter' => ObjectStorage_Http_Client::SOCKET, 'timeout' => 10);
-			$host = Yii::app()->params['host'];
-			$folder=Yii::app()->params['folder'];
-			$username = Yii::app()->params['username'];
-			$password = Yii::app()->params['password'];
-
-			$objectStorage = new ObjectStorage($host, $username, $password, $options);
 
 			foreach($fileObject as $fileName=>$modKey){
 
@@ -339,23 +313,27 @@ class FileWorkerV2 extends CFormModel
 					if ($ref[0]['modKey'] === hash('sha256', $modKey)) {
 
 						try{
-							$object = $objectStorage->with($folder.'/'.substr($fileName, 0,24))->get();
+                            if(FileWV2::ifExt(substr($fileName, 0,24))!=='not found'){
+
+                                $fnamed=substr($fileName, 0,24);
+
+                            }else{
+                                if(FileWV2::ifExt('del_'.substr($fileName, 0,24))!='not found'){
+                                    $fnamed='del_'.substr($fileName, 0,24);
+                                }
+                            }
 
 							$newFileName=hash('sha512',$fileName.$userId);
-							if($object!='not found'){
-								if($expireAfter===null){
-									$objectStorage->with($folder.'/'.$newFileName)
-										->setBody($object->getBody())
-										->setHeader('Content-type', 'application/octet-stream')
-										->create();
-								}else{
-									$objectStorage->with($folder.'/'.$newFileName)
-										->setBody($object->getBody())
-										->setHeader('Content-type', 'application/octet-stream')
-										//->deleteAfter(20)
-										->deleteAt($expireAfter)
-										->create();
-								}
+
+                            if(FileWV2::ifExt($fnamed)!='not found'){
+
+                                if($expireAfter===null){
+                                    FileWV2::makeCopyWithMeta($fnamed,$newFileName);
+
+                                }else {
+                                    FileWV2::makeCopyWithMeta($fnamed, 'del_' . $newFileName);
+                                }
+
 
 								$result[]=$newFileName;
 							}else{
@@ -401,20 +379,10 @@ class FileWorkerV2 extends CFormModel
 
 		if(is_array($fileObject)){
 
-			$options = array('adapter' => ObjectStorage_Http_Client::SOCKET, 'timeout' => 10);
-			$host = Yii::app()->params['host'];
-			$folder=Yii::app()->params['folder'];
-			$username = Yii::app()->params['username'];
-			$password = Yii::app()->params['password'];
-
-
-			$objectStorage = new ObjectStorage($host, $username, $password, $options);
-
 			foreach($fileObject as $fileName=>$modKey){
 
 				$mongof=new MongoId(substr($fileName, 0,24));
 
-				//print_r($mongof);
 
 				if($ref=Yii::app()->mongo->findByManyIds('fileToObj',array($mongof),array('_id'=>1,'modKey'=>1))) {
 					//print_r($ref);
@@ -423,15 +391,14 @@ class FileWorkerV2 extends CFormModel
 						$fileId=hash('sha256',substr($fileName, 0,24).$userId);
 
 						try{
-							$object = $objectStorage->with($folder.'/'.$fileId)->get();
+							//$object = $objectStorage->with($folder.'/'.$fileId)->get();
 
 							//print_r($object);
 
-							if($object!='not found'){
-								$size+=strlen($object->getBody());
-
+							//if($object!='not found'){
+								$size+=FileWV2::getSize($fileId);
 								$mngId = new MongoId();
-								//$fname=(string) $mngId;
+
 
 								if($expireAfter===null){
 									$file[]=array(
@@ -457,25 +424,20 @@ class FileWorkerV2 extends CFormModel
 								{
 									//print_r($message);
 									if($expireAfter===null){
-										$objectStorage->with($folder.'/'.$fileName)
-											->setBody($object->getBody())
-											->setHeader('Content-type', 'application/octet-stream')
-											->create();
+                                        FileWV2::makeCopyWithMeta($fileId,$fileName);
+
 									}else{
-										$objectStorage->with($folder.'/'.$fileName)
-											->setBody($object->getBody())
-											->setHeader('Content-type', 'application/octet-stream')
-											->deleteAt($expireAfter)
-											->create();
+                                        FileWV2::makeCopyWithMeta($fileId,'del_'.$fileName);
+
 									}
 
 								}else{
 									return false;
 								}
 
-							}else{
-								return false;
-							}
+							//}else{
+							//	return false;
+							//}
 						} catch (Exception $e) {
 							return false;
 						}
@@ -509,14 +471,6 @@ class FileWorkerV2 extends CFormModel
 
 		if(is_array($fileObject)){
 
-			$options = array('adapter' => ObjectStorage_Http_Client::SOCKET, 'timeout' => 10);
-			$host = Yii::app()->params['host'];
-			$folder=Yii::app()->params['folder'];
-			$username = Yii::app()->params['username'];
-			$password = Yii::app()->params['password'];
-
-
-			$objectStorage = new ObjectStorage($host, $username, $password, $options);
 
 			foreach($fileObject as $fileName=>$modKey){
 
@@ -529,23 +483,28 @@ class FileWorkerV2 extends CFormModel
 						$fileId=hash('sha256',substr($fileName, 0,24).$userId);
 
 						try{
-							$object = $objectStorage->with($folder.'/'.$fileId)->get();
 
-							if($object!='not found'){
-								$size+=strlen($object->getBody());
+                            if(FileWV2::ifExt($fileId)!=='not found'){
 
-								if($expireAfter===null){
-									$objectStorage->with($folder.'/'.$fileName)
-										->setBody($object->getBody())
-										->setHeader('Content-type', 'application/octet-stream')
-										->create();
-								}else{
-									$objectStorage->with($folder.'/'.$fileName)
-										->setBody($object->getBody())
-										->setHeader('Content-type', 'application/octet-stream')
-										->deleteAt($expireAfter)
-										->create();
-								}
+                                $fnamed=$fileId;
+
+                            }else{
+                                if(FileWV2::ifExt('del_'.$fileId)!='not found'){
+                                    $fnamed='del_'.$fileId;
+                                }
+                            }
+
+
+							if(FileWV2::ifExt($fnamed)!='not found'){
+                                $size+=FileWV2::getSize($fnamed);
+
+                                if($expireAfter===null){
+                                    FileWV2::makeCopyWithMeta($fnamed,$fileName);
+
+                                }else {
+                                    FileWV2::makeCopyWithMeta($fnamed, 'del_' . $fileName);
+                                }
+
 
 							}else{
 								return false;
@@ -573,14 +532,6 @@ class FileWorkerV2 extends CFormModel
 		if(is_array($fileObject)){
 
 
-			$options = array('adapter' => ObjectStorage_Http_Client::SOCKET, 'timeout' => 10);
-			$host = Yii::app()->params['host'];
-			$folder=Yii::app()->params['folder'];
-			$username = Yii::app()->params['username'];
-			$password = Yii::app()->params['password'];
-
-			$objectStorage = new ObjectStorage($host, $username, $password, $options);
-
 			foreach($fileObject as $index=>$fileData){
 
 				$file[]=array(
@@ -601,22 +552,19 @@ class FileWorkerV2 extends CFormModel
 					unset($file);
 
 					$fName=hash('sha256',substr($fileData['fileName'], 0,24).$userId);
+
 					try{
-						$object = $objectStorage->with($folder.'/'.$fName)->get();
 
 						if($expireAfter===null){
-							$objectStorage->with($folder.'/'.$fileId)
-								->setBody($object->getBody())
-								->setHeader('Content-type', 'application/octet-stream')
-								->create();
+
+                            FileWV2::makeCopyWithMeta($fName,$fileId);
+
+
 						}else{
-							$objectStorage->with($folder.'/'.$fileId)
-								->setBody($object->getBody())
-								->setHeader('Content-type', 'application/octet-stream')
-								//->deleteAfter(20)
-								->deleteAt($expireAfter)
-								->create();
+                            FileWV2::makeCopyWithMeta($fName,'del_'.$fileId);
+
 						}
+
 
 					} catch (Exception $e) {
 						//reverse if fail in the process
@@ -644,27 +592,21 @@ class FileWorkerV2 extends CFormModel
 		if(strlen($this->fileName)==24){
 			$result['response']='fail';
 
-			$options = array('adapter' => ObjectStorage_Http_Client::SOCKET, 'timeout' => 10);
-			$host = Yii::app()->params['host'];
-			$folder=Yii::app()->params['folder'];
-			$username = Yii::app()->params['username'];
-			$password = Yii::app()->params['password'];
-
 			$fOname=$this->fileName;
-			$objectStorage = new ObjectStorage($host, $username, $password, $options);
 
 			$mongof[]=new MongoId($fOname);
 
 			if($ref=Yii::app()->mongo->findByManyIds('fileToObj',$mongof,array('_id'=>1,'modKey'=>1,'pgpFileName'=>1))){
 
 				if($ref[0]['modKey']===hash('sha256',$this->modKey.$userId)){
-					if($res = $objectStorage->with($folder.'/'.$ref[0]['pgpFileName'])->delete()){
-						if($res==1 || $res=='not found'){
-							if(Yii::app()->mongo->removeById('fileToObj',$fOname)){
-								$result['response']='success';
-							}
-						}
-					}
+
+                    if($res =FileWV2::deleteFile($ref[0]['pgpFileName'])) {
+                        if ($res == 1 || $res == 'not found') {
+                            if (Yii::app()->mongo->removeById('fileToObj', $fOname)) {
+                                $result['response'] = 'success';
+                            }
+                        }
+                    }
 				}
 
 			}else{
@@ -682,12 +624,6 @@ class FileWorkerV2 extends CFormModel
 	{
 		$result['response']='fail';
 
-		$options = array('adapter' => ObjectStorage_Http_Client::SOCKET, 'timeout' => 10);
-		$host = Yii::app()->params['host'];
-		$username = Yii::app()->params['username'];
-		$folder=Yii::app()->params['folder'];
-		$password = Yii::app()->params['password'];
-
 		$mngId = new MongoId();
 		$fname=(string) $mngId;
 		$file[]=array(
@@ -702,17 +638,15 @@ class FileWorkerV2 extends CFormModel
 
 		if($message=Yii::app()->mongo->insert('fileToObj',$file))
 		{
-			$fileId=hash('sha256',$fname.$userId);
-
-			$objectStorage = new ObjectStorage($host, $username, $password, $options);
+			$fileId=$file[0]['pgpFileName'];
 
 			try{
-				$objectStorage->with($folder.'/'.$fileId)->setBody($this->file)
-					->setHeader('Content-type', 'application/octet-stream')
-					->create();
+                if(FileWV2::saveFile($fileId,$this->file)){
+                    $result['response']='success';
+                    $result['fileName']=$message[0];
+                }
 
-				$result['response']='success';
-				$result['fileName']=$message[0];
+
 			} catch (Exception $e) {
 
 			}
@@ -731,12 +665,6 @@ class FileWorkerV2 extends CFormModel
 	public function createNewAttachment($fileData,$messageId)
 	{
 
-		$options = array('adapter' => ObjectStorage_Http_Client::SOCKET, 'timeout' => 10);
-		$host = Yii::app()->params['host'];
-		$username = Yii::app()->params['username'];
-		$folder=Yii::app()->params['folder'];
-		$password = Yii::app()->params['password'];
-
 		$mngId = new MongoId();
 		$file[]=array(
 			"_id"=>$mngId,
@@ -750,13 +678,23 @@ class FileWorkerV2 extends CFormModel
 		if($message=Yii::app()->mongo->insert('fileToObj',$file))
 		{
 			$fileId=$message[0];
-			$objectStorage = new ObjectStorage($host, $username, $password, $options);
+
 
 			try{
-				$objectStorage->with($folder.'/'.$fileId)->setBody($fileData['data'])
-					->setHeader('Content-type', 'application/octet-stream')
-					->deleteAt($fileData['expire'])
-					->create();
+                if($fileData['expire']===null){
+                    if(FileWV2::saveFile($fileId,$fileData['data'])){
+
+                    }else{
+                        return null;
+                    }
+                }else{
+                    if(FileWV2::saveFile('del_'.$fileId,$fileData['data'])){
+
+                    }else{
+                        return null;
+                    }
+
+                }
 				return $message[0];
 			} catch (Exception $e) {
 				return null;
@@ -769,21 +707,15 @@ class FileWorkerV2 extends CFormModel
 	public function getFileSize($fname)
 	{
 
-		$options = array('adapter' => ObjectStorage_Http_Client::SOCKET, 'timeout' => 10);
-		$host = Yii::app()->params['host'];
-		$folder=Yii::app()->params['folder'];
-		$username = Yii::app()->params['username'];
-		$password = Yii::app()->params['password'];
-
 		try{
 			$fOname=$fname;
-			$objectStorage = new ObjectStorage($host, $username, $password, $options);
-			$result =$objectStorage->with($folder.'/'.$fOname)->getInfo();
+
+			$result =FileWV2::getSize($fOname);
+
 			$size=0;
 			if($result!="not found"){
-				$size =$result->getHeader('Content-length');
+				$size =$result;
 			}
-
 			return $size;
 
 		} catch (Exception $e) {
@@ -827,16 +759,10 @@ class FileWorkerV2 extends CFormModel
 	}
 	public function deleteFilesV2($fileArray)
 	{
-		if(is_array($fileArray) && count($fileArray)>1){
-			$options = array('adapter' => ObjectStorage_Http_Client::SOCKET, 'timeout' => 10);
-			$host = Yii::app()->params['host'];
-			$folder=Yii::app()->params['folder'];
-			$username = Yii::app()->params['username'];
-			$password = Yii::app()->params['password'];
-			$objectStorage = new ObjectStorage($host, $username, $password, $options);
 
+		if(is_array($fileArray) && count($fileArray)>1){
 			foreach($fileArray as $fName){
-					$objectStorage->with($folder.'/'.$fName)->delete();
+                FileWV2::deleteFile($fName);
 			}
 		}
 
